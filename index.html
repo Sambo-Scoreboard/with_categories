@@ -481,7 +481,11 @@
             if (['2', '抑2', '-抑2'].includes(typeLabel)) state[side].count2 += (d > 0 ? 1 : -1);
             if (d > 0) state.lastTechScorer = side;
         }
-        document.getElementById(`${side}-score`).innerText = state[side].score;
+        
+        const scoreEl = document.getElementById(`${side}-score`);
+        scoreEl.innerText = state[side].score;
+        scoreEl.style.fontSize = state[side].score >= 10 ? '220px' : '350px';
+
         if (typeLabel) recordHistory(side, typeLabel);
         updateStatusLabels();
     }
@@ -625,7 +629,9 @@
     function confirmResetScore(side) {
         if(confirm(`${side === 'red' ? '赤' : '青'}コーナーの得点をリセットしますか？`)) {
             state[side].score = 0; state[side].ippon = false; state[side].techScore = 0; state[side].count4 = 0; state[side].count2 = 0;
-            document.getElementById(`${side}-score`).innerText = 0;
+            const scoreEl = document.getElementById(`${side}-score`);
+            scoreEl.innerText = 0;
+            scoreEl.style.fontSize = '350px';
             document.getElementById(`${side}-ippon-txt`).innerText = "";
             recordHistory(side, 'Reset'); updateStatusLabels();
         }
@@ -676,7 +682,15 @@
             state.red = { score: 0, warn: 0, ippon: false, techScore: 0, count4: 0, count2: 0, foulCount: 0 };
             state.blue = { score: 0, warn: 0, ippon: false, techScore: 0, count4: 0, count2: 0, foulCount: 0 };
             state.history = []; state.lastTechScorer = null; state.lastWarned = null;
-            document.getElementById('red-score').innerText = '0'; document.getElementById('blue-score').innerText = '0';
+            
+            const rs = document.getElementById('red-score');
+            rs.innerText = '0';
+            rs.style.fontSize = '350px';
+            
+            const bs = document.getElementById('blue-score');
+            bs.innerText = '0';
+            bs.style.fontSize = '350px';
+            
             document.getElementById('red-ippon-txt').innerText = ''; document.getElementById('blue-ippon-txt').innerText = '';
             document.getElementById('red-name').value = '赤コーナー'; document.getElementById('blue-name').value = '青コーナー';
             updateNameColors(); renderCards('red'); renderCards('blue');
