@@ -2,10 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>SAMBO Scoreboard - Foul Update</title>
+    <title>SAMBO Scoreboard - Unified</title>
     <style>
-        :root { 
-            --red: #d32f2f; --blue: #1976d2; --purple: #6a1b9a; --yellow: #ffeb3b; --white: #ffffff; --black: #000000;
+        :root {
+            --red: #d32f2f; --blue: #1976d2; --purple: #6a1b9a;
+            --yellow: #ffeb3b; --white: #ffffff; --black: #000000;
         }
         * { box-sizing: border-box; }
         html, body {
@@ -19,13 +20,13 @@
             display: flex; flex-direction: column;
         }
 
-        /* --- 最上段プルダウンエリア (Height: 120px) --- */
+        /* ===== TOP BAR (index.htmlそのまま) ===== */
         .top-bar {
             width: 100%; height: 120px;
             display: flex; justify-content: center; align-items: center;
             gap: 20px; background: var(--black); z-index: 100; padding: 0 40px;
+            flex-shrink: 0;
         }
-
         .top-dropdown {
             background-color: var(--black); color: var(--white);
             border: 3px solid var(--white); font-size: 36px; font-weight: bold;
@@ -33,127 +34,89 @@
             width: 225px; text-align: center; outline: none;
             text-align-last: center;
         }
-.top-dropdown:nth-of-type(1) { width: 200px; }
-.top-dropdown:nth-of-type(3) { width: 165px; }
+        .top-dropdown:nth-of-type(1) { width: 200px; }
+        .top-dropdown:nth-of-type(3) { width: 165px; }
         .top-dropdown:nth-of-type(4) { width: 360px; }
 
-        .half { width: 100%; height: 480px; display: flex; }
-        .red-half { background-color: var(--red); }
-        .blue-half { background-color: var(--blue); border-top: 2px solid rgba(255,255,255,0.1); }
-
-        .left-col {
-            width: 1280px; height: 100%; padding: 10px 30px 10px 60px;
-            display: flex; flex-direction: column;
+        /* ===== SCOREBOARD WRAPPERS ===== */
+        .scoreboard-area {
+            width: 1920px; height: 960px; position: relative; flex-shrink: 0;
         }
-        
-        .right-col {
-            width: 640px; height: 100%; padding: 30px 50px;
-            display: flex; flex-direction: column; align-items: flex-end;
+        .scoreboard-panel {
+            display: none;
+            width: 1920px; height: 960px; position: absolute; top: 0; left: 0;
         }
+        .scoreboard-panel.active { display: flex; flex-direction: column; }
 
-        .red-half .right-col { justify-content: flex-start; }
-        .blue-half .right-col { justify-content: flex-end; }
+        /* ===== SHARED: half layout ===== */
+        .s-half { width: 100%; display: flex; }
+        .s-red-half { background-color: var(--red); }
+        .s-blue-half { background-color: var(--blue); border-top: 2px solid rgba(255,255,255,0.1); }
 
+        /* ===== SHARED: buttons ===== */
+        .btn { cursor: pointer; background: transparent; color: #fff; border: 2px solid #fff;
+               display: flex; align-items: center; justify-content: center;
+               font-weight: bold; transition: 0.1s; outline: none; }
+        .btn:active { background: rgba(255,255,255,0.3); }
+        .btn-circle { width: 70px; height: 70px; border-radius: 50%; font-size: 28px; }
+        .btn-ellipse { width: 110px; height: 70px; border-radius: 35px; font-size: 24px; white-space: nowrap; }
+        .btn-rect { width: 95px; height: 75px; border-radius: 12px; font-size: 32px; }
+        .btn-yellow { color: var(--yellow); border-color: var(--yellow); }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* ===== SHARED: name row ===== */
         .name-row {
-            width: 100%; border-bottom: 4px solid #fff; margin-bottom: 5px;
+            width: 100%; border-bottom: 4px solid #fff; margin-bottom: 6px;
             display: flex; align-items: stretch; gap: 0; height: 90px;
         }
-        .name-input { 
-            background: transparent; border: none; color: #fff; font-size: 64px; 
-            font-weight: bold; outline: none; flex-shrink: 0; width: 520px; padding: 0;
+        .name-input {
+            background: transparent; border: none; color: #fff; font-size: 64px;
+            font-weight: bold; outline: none; flex-shrink: 0; width: 540px; padding: 0;
             transition: color 0.3s;
         }
         .name-input.winner-highlight { color: var(--yellow) !important; }
         .ippon-area { flex: 1; display: flex; align-items: center; padding-left: 30px; }
-        .ippon-label { 
-            font-size: 60px; color: var(--yellow); font-weight: bold; font-style: italic; 
+        .ippon-label {
+            font-size: 60px; color: var(--yellow); font-weight: bold;
             white-space: nowrap; text-shadow: 4px 4px 10px rgba(0,0,0,0.5); line-height: 1.0;
         }
 
-        .main-section { display: flex; align-items: center; flex: 1; min-height: 0; }
-        .score-val { 
-            font-size: 350px; font-weight: 900; line-height: 0.85; 
-            font-family: 'Arial Black', sans-serif; 
-            margin-right: 30px; min-width: 300px; text-align: center; flex-shrink: 0;
+        /* ===== SHARED: score value ===== */
+        .score-val {
+            font-family: 'Arial Black', sans-serif; font-weight: 900;
+            line-height: 0.85; margin-right: 20px; min-width: 270px;
+            text-align: center; flex-shrink: 0;
         }
-        
-        .controls-wrapper { display: flex; align-items: center; gap: 40px; }
-        .btn-controls { display: flex; flex-direction: column; gap: 15px; flex-shrink: 0; }
+
+        /* ===== SHARED: btn-controls ===== */
+        .btn-controls { display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; }
         .btn-row { display: flex; gap: 15px; align-items: center; }
 
-        .sub-timers { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
-        .timer-group { display: flex; align-items: center; gap: 16px; font-weight: bold; }
-        .timer-label { min-width: 90px; text-align: right; font-size: 40px; }
-        .timer-display { 
-            background: rgba(0,0,0,0.45); font-family: 'Consolas', monospace; font-size: 56px;
-            padding: 0; border-radius: 12px; width: 180px; height: 70px; 
-            display: flex; align-items: center; justify-content: center;
-        }
-        .timer-display.limit-reached { color: var(--yellow); border: 3px solid var(--yellow); }
-        .sub-btn { width: 70px; height: 70px; border-radius: 50%; font-size: 26px; }
-
-        .warning-top { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; } 
-        .warning-label { font-size: 46px; font-weight: bold; line-height: 1.1; text-align: center; } 
-        .card-row { display: flex; gap: 15px; }
-        .card { width: 100px; height: 160px; border: 4px solid #fff; border-radius: 12px; }
+        /* ===== SHARED: warning cards ===== */
+        .card { border: 4px solid #fff; border-radius: 12px; }
         .card.active { background-color: var(--yellow); box-shadow: 0 0 25px var(--yellow); border-color: var(--yellow); }
-        .warning-btns { display: flex; gap: 15px; }
+        .card-row { display: flex; gap: 12px; }
+        .warning-top { display: flex; align-items: center; gap: 15px; }
+        .warning-label { font-weight: bold; }
+        .warning-btns { display: flex; gap: 12px; }
 
-        .main-timer-panel {
-            position: absolute; top: 600px; right: 0; transform: translateY(-50%);
-            width: 655px; height: 360px; background-color: var(--black);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-left: 2px solid rgba(255,255,255,0.2); z-index: 10;
-        }
-        .main-timer-panel.late-red { background-color: var(--red); }
-        .main-timer-panel.late-blue { background-color: var(--blue); }
-        .main-timer-panel.late-both { background-color: var(--purple); }
-
-        .main-timer-val { 
-            font-size: 270px; font-family: 'Arial Black', sans-serif; font-weight: 900; 
-            line-height: 1.0; margin:-40px 0 10px 0;
-        }
-        .main-timer-panel .control-row { display: flex; gap: 10px; position: relative; }
-
+        /* ===== SHARED: mode dropdown ===== */
         .mode-dropdown {
-            display: none; position: absolute; bottom: 80px; left: 0;
+            display: none; position: absolute; bottom: 85px; left: 0;
             background: #222; border: 2px solid #fff; border-radius: 10px;
-            overflow: hidden; z-index: 20; min-width: 220px;
+            overflow: hidden; z-index: 20; min-width: 230px;
         }
         .mode-dropdown.open { display: block; }
         .mode-option {
-            padding: 15px 25px; font-size: 28px; font-weight: bold; cursor: pointer;
+            padding: 16px 26px; font-size: 30px; font-weight: bold; cursor: pointer;
             color: #fff; border-bottom: 1px solid #444;
         }
+        .mode-option:last-child { border-bottom: none; }
         .mode-option:hover { background: rgba(255,255,255,0.15); }
         .mode-option.selected { color: var(--yellow); }
 
-        .btn { cursor: pointer; background: transparent; color: #fff; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.1s; outline: none; }
-        .btn:active { background: rgba(255,255,255,0.3); }
-        
-        .btn-circle { width: 65px; height: 65px; border-radius: 50%; font-size: 24px; }
-        .btn-ellipse { width: 100px; height: 70px; border-radius: 35px; font-size: 24px; white-space: nowrap; }
-        
-        .btn-rect { width: 90px; height: 70px; border-radius: 12px; font-size: 28px; }
-        .btn-yellow { color: var(--yellow); border-color: var(--yellow); }
-        
-        .btn-top-reset { position: absolute; top: 30px; left: 20px; font-size: 24px; padding: 8px 15px; border-width: 3px; z-index: 110; opacity: 0.7; }
-        .btn-top-reset:hover { opacity: 1; }
-        .btn-bottom-reset { 
-            position: absolute; bottom: 20px; left: 20px; font-size: 28px; 
-            color: rgba(255,255,255,0.7); background: transparent; border: none; 
-            cursor: pointer; z-index: 110; outline: none; font-family: "Helvetica Neue", Arial, sans-serif;
-        }
-        .btn-bottom-reset:hover { color: #fff; }
-
-        /* JPボタンの位置変更: 赤・青の境目中央に配置 */
-        #jp-btn { 
-            position: absolute; left: 20px; top: 600px; transform: translateY(-50%); 
-            z-index: 100; width: 60px; height: 60px; border-radius: 30px; 
-            background: #444; font-size: 20px; 
-        }
-
-        #score-sheet-overlay {
+        /* ===== SHARED: score sheet overlay ===== */
+        .score-sheet-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 1000;
             display: none; justify-content: center; align-items: center;
@@ -163,86 +126,201 @@
             box-shadow: 0 0 80px rgba(0,0,0,0.6); border: 6px solid #fff;
         }
         .sheet-data-area { display: flex; width: 100%; height: 400px; }
-        .sheet-col-names {
-            width: 320px; display: flex; flex-direction: column; flex-shrink: 0;
-            border-right: 2px solid #fff;
-        }
-        .sheet-col-history {
-            flex: 1; overflow-x: auto; overflow-y: hidden; display: flex; flex-direction: column; background: #fff;
-            scrollbar-color: rgba(0,0,0,0.4) transparent; scrollbar-width: thin;
-        }
+        .sheet-col-names { width: 320px; display: flex; flex-direction: column; flex-shrink: 0; border-right: 2px solid #fff; }
+        .sheet-col-history { flex: 1; overflow-x: auto; overflow-y: hidden; display: flex; flex-direction: column; background: #fff; scrollbar-color: rgba(0,0,0,0.4) transparent; scrollbar-width: thin; }
         .sheet-col-history::-webkit-scrollbar { height: 16px; }
         .sheet-col-history::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.4); border-radius: 8px; }
-        .sheet-col-total {
-            width: 320px; display: flex; flex-direction: column; flex-shrink: 0;
-            border-left: 2px solid #fff;
-        }
-        .sheet-cell {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            font-size: 48px; font-weight: bold;
-        }
+        .sheet-col-total { width: 320px; display: flex; flex-direction: column; flex-shrink: 0; border-left: 2px solid #fff; }
+        .sheet-cell { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; }
         .red-bg { background-color: var(--red); color: var(--white); }
         .blue-bg { background-color: var(--blue); color: var(--white); }
         .sheet-col-names .red-bg, .sheet-col-total .red-bg { border-bottom: 2px solid rgba(255,255,255,0.4); }
-        .history-track-wrapper {
-            display: flex; flex-direction: column; min-width: 100%; width: max-content; height: 100%;
-        }
-        .history-row {
-            flex: 1; display: flex; align-items: center; gap: 20px; padding: 0 30px;
-        }
+        .history-track-wrapper { display: flex; flex-direction: column; min-width: 100%; width: max-content; height: 100%; }
+        .history-row { flex: 1; display: flex; align-items: center; gap: 20px; padding: 0 30px; }
         .history-row.red-bg { border-bottom: 2px solid rgba(255,255,255,0.4); }
-        .history-item {
-            font-size: 60px; font-weight: bold; min-width: 90px; height: 100%;
-            display: flex; align-items: center; justify-content: center; white-space: nowrap;
-        }
+        .history-item { font-size: 60px; font-weight: bold; min-width: 90px; height: 100%; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
         .sheet-total-val { font-size: 100px; font-weight: 900; font-family: 'Arial Black', sans-serif; }
-        .sheet-result-row {
-            height: 120px; display: flex; align-items: center; justify-content: center;
-            font-size: 60px; font-weight: bold; color: var(--black); background: var(--white);
-            border-top: 4px solid var(--black); border-bottom: 2px solid #ccc;
+        .sheet-result-row { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 54px; font-weight: bold; color: var(--black); background: var(--white); border-top: 4px solid var(--black); border-bottom: 2px solid #ccc; }
+        .sheet-footer-row { height: 100px; display: flex; align-items: center; justify-content: center; background: var(--white); }
+        .btn-sheet-close { font-size: 36px; font-weight: bold; color: var(--black); padding: 10px 80px; cursor: pointer; background: #f0f0f0; border: 3px solid #666; border-radius: 12px; }
+        .btn-sheet-close:hover { background: #e0e0e0; }
+
+        /* ===================================================
+           SPORT / COMBAT SCOREBOARD STYLES (高さ960px版)
+           =================================================== */
+        .sc-half { height: 480px; }
+
+        .sc-left-col {
+            width: 1280px; height: 100%; padding: 8px 20px 8px 55px;
+            display: flex; flex-direction: column;
         }
-        .sheet-footer-row {
-            height: 100px; display: flex; align-items: center; justify-content: center;
-            background: var(--white);
+        .sc-right-col {
+            width: 640px; height: 100%; padding: 0 45px;
+            display: flex; flex-direction: column; align-items: flex-end;
         }
-        .btn-sheet-close {
-            font-size: 36px; font-weight: bold; color: var(--black);
-            padding: 10px 80px; cursor: pointer;
-            background: #f0f0f0; border: 3px solid #666; border-radius: 12px;
+        .s-red-half .sc-right-col { justify-content: flex-start; padding-top: 30px; }
+        .s-blue-half .sc-right-col { justify-content: flex-start; padding-top: 200px; }
+
+        .sc-main-section { display: flex; align-items: center; flex: 1; min-height: 0; }
+        .sc-score-val { font-size: 360px; }
+
+        .sc-controls-wrapper { display: flex; align-items: center; gap: 40px; }
+
+        /* サブタイマーエリア (sport/combat) */
+        .sc-sub-timers {
+            display: flex; flex-direction: column; gap: 8px;
+            flex-shrink: 0; align-items: center; width: 420px;
+            height: 100%; justify-content: center;
+        }
+        .sc-sub-dropdown {
+            font-size: 48px; width: 200px;
+            background: rgba(0,0,0,0.6); color: #fff;
+            border: 2px solid #fff; border-radius: 10px;
+            text-align-last: center; cursor: pointer; outline: none; margin-bottom: 4px;
+        }
+        .sc-sub-label {
+            font-size: 48px; font-weight: bold;
+            text-align: center; width: 100%; margin-top: 4px; margin-bottom: -4px;
+        }
+        .sc-timer-display-large {
+            background: rgba(0,0,0,0.45); font-family: 'Consolas', monospace;
+            font-size: 80px; padding: 0; border-radius: 12px;
+            width: 250px; height: 90px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sc-timer-display-large.limit-reached { color: var(--yellow); border: 3px solid var(--yellow); }
+        .timer-group { display: flex; align-items: center; gap: 14px; font-weight: bold; }
+
+        /* 右カラム警告 (sport/combat) */
+        .sc-card { width: 95px; height: 160px; }
+        .sc-warning-label { font-size: 32px; }
+
+        /* メインタイマーパネル (sport/combat) */
+        .sc-main-timer-panel {
+            position: absolute; top: 480px; right: 0; transform: translateY(-50%);
+            width: 640px; height: 360px; background-color: var(--black);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-left: 2px solid rgba(255,255,255,0.2); z-index: 10;
+        }
+        .sc-main-timer-panel.late-red { background-color: var(--red); }
+        .sc-main-timer-panel.late-blue { background-color: var(--blue); }
+        .sc-main-timer-panel.late-both { background-color: var(--purple); }
+        .sc-main-timer-val {
+            font-size: 240px; font-family: 'Arial Black', sans-serif; font-weight: 900;
+            line-height: 1.0; margin: -30px 0 8px 0;
+        }
+        .sc-main-timer-panel .control-row { display: flex; gap: 10px; position: relative; }
+
+        /* JP / RESET ボタン (sport/combat) */
+        .sc-jp-btn {
+            position: absolute; left: 20px; top: 480px; transform: translateY(-50%);
+            z-index: 100; width: 58px; height: 58px; border-radius: 50%;
+            background: #444; font-size: 18px;
+        }
+        .sc-ar-btn {
+            position: absolute; top: 15px; left: 15px; font-size: 22px;
+            opacity: 0.7; padding: 8px 16px; z-index: 110; border-width: 2px;
+        }
+        .sc-ar-btn:hover { opacity: 1; }
+        .sc-reset-btn {
+            position: absolute; bottom: 10px; left: 15px; font-size: 24px;
+            color: rgba(255,255,255,0.65); background: transparent; border: none;
+            cursor: pointer; z-index: 110; outline: none;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+        }
+        .sc-reset-btn:hover { color: #fff; }
+
+        /* ===================================================
+           BEACH SCOREBOARD STYLES (高さ960px版)
+           =================================================== */
+        .bc-half { height: 480px; }
+
+        .bc-left-col {
+            width: 1280px; height: 100%; padding: 10px 20px 10px 55px;
+            display: flex; flex-direction: column;
+        }
+        .bc-right-col {
+            width: 640px; height: 100%; padding: 0 45px;
+            display: flex; flex-direction: column; align-items: flex-end;
+        }
+        .s-red-half .bc-right-col { justify-content: flex-start; padding-top: 30px; }
+        .s-blue-half .bc-right-col { justify-content: flex-start; padding-top: 200px; }
+
+        .bc-main-section { display: flex; align-items: center; flex: 1; min-height: 0; }
+        .bc-score-val { font-size: 380px; }
+
+        .bc-controls-wrapper { display: flex; align-items: center; gap: 50px; }
+
+        /* 医療タイマー (beach) */
+        .bc-sub-timers {
+            display: flex; flex-direction: column; gap: 10px;
+            flex-shrink: 0; align-items: center; width: 380px;
+            height: 100%; justify-content: center;
+        }
+        .bc-med-label { font-size: 44px; font-weight: bold; margin-bottom: 5px; }
+        .bc-timer-display-large {
+            background: rgba(0,0,0,0.45); font-family: 'Consolas', monospace;
+            font-size: 110px; padding: 0; border-radius: 12px;
+            width: 340px; height: 130px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* 右カラム警告 (beach) */
+        .bc-card { width: 110px; height: 180px; }
+        .bc-warning-label { font-size: 36px; }
+
+        /* メインタイマーパネル (beach) */
+        .bc-main-timer-panel {
+            position: absolute; top: 480px; right: 0; transform: translateY(-50%);
+            width: 640px; height: 360px; background-color: var(--black);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-left: 2px solid rgba(255,255,255,0.2); z-index: 10;
+        }
+        .bc-main-timer-panel.bc-late-red { background-color: var(--red); }
+        .bc-main-timer-panel.bc-late-blue { background-color: var(--blue); }
+        .bc-main-timer-panel.bc-late-both { background-color: var(--purple); }
+        .bc-main-timer-val {
+            font-size: 240px; font-family: 'Arial Black', sans-serif; font-weight: 900;
+            line-height: 1.0; margin: -30px 0 8px 0;
+        }
+        .bc-main-timer-panel .control-row { display: flex; gap: 10px; position: relative; }
+
+        /* JP / RESET ボタン (beach) */
+        .bc-jp-btn {
+            position: absolute; left: 20px; top: 480px; transform: translateY(-50%);
+            z-index: 100; width: 58px; height: 58px; border-radius: 50%;
+            background: #444; font-size: 18px;
+        }
+        .bc-ar-btn {
+            position: absolute; top: 15px; left: 15px; font-size: 22px;
+            opacity: 0.7; padding: 8px 16px; z-index: 110; border-width: 2px;
+        }
+        .bc-ar-btn:hover { opacity: 1; }
+        .bc-reset-btn {
+            position: absolute; bottom: 10px; left: 15px; font-size: 24px;
+            color: rgba(255,255,255,0.65); background: transparent; border: none;
+            cursor: pointer; z-index: 110; outline: none;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+        }
+        .bc-reset-btn:hover { color: #fff; }
+
+        /* placeholder (種目未選択) */
+        #placeholder-panel {
+            display: flex; align-items: center; justify-content: center;
+            width: 1920px; height: 960px; position: absolute; top: 0; left: 0;
+        }
+        #placeholder-panel p {
+            font-size: 64px; color: rgba(255,255,255,0.25); font-weight: bold;
         }
     </style>
 </head>
 <body>
-
 <div id="app">
-    <button class="btn btn-top-reset" onclick="allReset()">ALL RESET</button>
-    <button class="btn-bottom-reset" onclick="matchReset()">RESET</button>
-    <button id="jp-btn" class="btn" onclick="openScoreSheet()">JP</button>
 
-    <div id="score-sheet-overlay">
-        <div class="sheet-container">
-            <div class="sheet-data-area">
-                <div class="sheet-col-names">
-                    <div class="sheet-cell red-bg">赤コーナー</div>
-                    <div class="sheet-cell blue-bg">青コーナー</div>
-                </div>
-                <div class="sheet-col-history" id="sheet-scroll-area">
-                    <div class="history-track-wrapper">
-                        <div class="history-row red-bg" id="red-history-track"></div>
-                        <div class="history-row blue-bg" id="blue-history-track"></div>
-                    </div>
-                </div>
-                <div class="sheet-col-total">
-                    <div class="sheet-cell red-bg sheet-total-val" id="sheet-red-total">0</div>
-                    <div class="sheet-cell blue-bg sheet-total-val" id="sheet-blue-total">0</div>
-                </div>
-            </div>
-            <div class="sheet-result-row" id="sheet-result-text"></div>
-            <div class="sheet-footer-row">
-                <button class="btn-sheet-close" onclick="closeScoreSheet()">戻</button>
-            </div>
-        </div>
-    </div>
+    <!-- ============================================================
+         TOP BAR (index.html そのまま)
+         ============================================================ -->
+    <button class="btn sc-ar-btn" style="position:absolute;top:30px;left:20px;font-size:24px;padding:8px 15px;border-width:3px;z-index:200;opacity:0.7;" onclick="globalAllReset()">ALL RESET</button>
 
     <div class="top-bar">
         <select class="top-dropdown"><option value="" selected>マット</option><option value="A">Aマット</option><option value="B">Bマット</option></select>
@@ -262,470 +340,1376 @@
             <option value="56">第56試合</option><option value="57">第57試合</option><option value="58">第58試合</option><option value="59">第59試合</option><option value="60">第60試合</option>
         </select>
         <select class="top-dropdown"><option value="" selected>性別</option><option value="male">男子</option><option value="female">女子</option></select>
-        <select class="top-dropdown">
-            <option value="" selected>種目</option>
-            <option value="sport">スポーツサンボ</option>
+        <select class="top-dropdown" id="event-selector" onchange="switchScoreboard(this.value)">
+            <option value="">種目</option>
+            <option value="sport" selected>スポーツサンボ</option>
             <option value="combat">コンバットサンボ</option>
             <option value="beach">ビーチサンボ</option>
         </select>
         <select class="top-dropdown"><option value="" selected>階級</option><option value="58">58kg級</option><option value="64">64kg級</option><option value="71">71kg級</option><option value="79">79kg級</option><option value="88">88kg級</option><option value="98">98kg級</option><option value="+98">+98kg級</option><option value="50">50kg級</option><option value="54">54kg級</option><option value="59">59kg級</option><option value="65">65kg級</option><option value="72">72kg級</option><option value="80">80kg級</option><option value="+80">+80kg級</option></select>
-        <select class="top-dropdown"><option value="" selected>ラウンド</option><option value="1st">1回戦</option><option value="2nd">2回戦</option><option value="3rd">3回戦</option><option value="qf">準々決勝</option><option value="sf">準決勝</option><option value="f">決勝</option><option value="f">リーグ戦</option><option value="rep">敗者戦</option></select>
+        <select class="top-dropdown"><option value="" selected>ラウンド</option><option value="1st">1回戦</option><option value="2nd">2回戦</option><option value="3rd">3回戦</option><option value="qf">準々決勝</option><option value="sf">準決勝</option><option value="f">決勝</option><option value="league">リーグ戦</option><option value="rep">敗者戦</option></select>
     </div>
 
-    <div class="half red-half">
-        <div class="left-col">
-            <div class="name-row">
-                <input type="text" id="red-name" class="name-input" value="赤コーナー">
-                <div class="ippon-area"><div id="red-ippon-txt" class="ippon-label"></div></div>
-            </div>
-            <div class="main-section">
-                <span id="red-score" class="score-val">0</span>
-                <div class="controls-wrapper">
-                    <div class="btn-controls">
-                        <div class="btn-row">
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('red', 1, '1')">1</button>
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('red', 2, '2')">2</button>
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('red', 4, '4')">4</button>
-                            <button class="btn btn-circle btn-yellow" onclick="setIppon('red')">本</button>
+    <!-- ============================================================
+         SCOREBOARD AREA
+         ============================================================ -->
+    <div class="scoreboard-area">
+
+        <!-- PLACEHOLDER -->
+        <div id="placeholder-panel">
+            <p>← 種目を選択してください</p>
+        </div>
+
+        <!-- ========================================================
+             SPORT SCOREBOARD (sport.html)
+             ======================================================== -->
+        <div id="sport-panel" class="scoreboard-panel">
+            <button class="btn sc-reset-btn" onclick="sp_matchReset()">RESET</button>
+            <button id="sp-jp-btn" class="btn sc-jp-btn" onclick="sp_openScoreSheet()">JP</button>
+
+            <div id="sp-score-sheet-overlay" class="score-sheet-overlay">
+                <div class="sheet-container">
+                    <div class="sheet-data-area">
+                        <div class="sheet-col-names">
+                            <div class="sheet-cell red-bg">赤コーナー</div>
+                            <div class="sheet-cell blue-bg">青コーナー</div>
                         </div>
-                        <div class="btn-row">
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('red', 2, '抑2')">抑2</button>
-                            <button class="btn btn-ellipse" onclick="changeScore('red', -2, '-抑2')">－抑2</button>
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('red', 4, '抑4')">抑4</button>
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('red', 4, '4D')">4D</button>
+                        <div class="sheet-col-history" id="sp-sheet-scroll-area">
+                            <div class="history-track-wrapper">
+                                <div class="history-row red-bg" id="sp-red-history-track"></div>
+                                <div class="history-row blue-bg" id="sp-blue-history-track"></div>
+                            </div>
                         </div>
-                        <div class="btn-row">
-                            <button class="btn btn-circle" onclick="changeScore('red', 1, '+')">＋</button>
-                            <button class="btn btn-circle" onclick="changeScore('red', -1, '-')">－</button>
-                            <button class="btn btn-circle" onclick="confirmResetScore('red')">R</button>
-                            <button class="btn btn-circle" onclick="setDrawWin('red')">同</button>
+                        <div class="sheet-col-total">
+                            <div class="sheet-cell red-bg sheet-total-val" id="sp-sheet-red-total">0</div>
+                            <div class="sheet-cell blue-bg sheet-total-val" id="sp-sheet-blue-total">0</div>
                         </div>
                     </div>
-                    <div class="sub-timers">
-                        <div class="timer-group"><span class="timer-label">抑込</span><div id="redOsae-val" class="timer-display">0</div><button class="btn sub-btn" id="btn-redOsae" onclick="toggleSub('redOsae')">▶</button><button class="btn sub-btn" onclick="resetSub('redOsae')">R</button></div>
-                        <div class="timer-group"><span class="timer-label">関節</span><div id="redKan-val" class="timer-display">0</div><button class="btn sub-btn" id="btn-redKan" onclick="toggleSub('redKan')">▶</button><button class="btn sub-btn" onclick="resetSub('redKan')">R</button></div>
-                        <div class="timer-group"><span class="timer-label">医療</span><div id="redMed-val" class="timer-display">2:00</div><button class="btn sub-btn" id="btn-redMed" onclick="toggleSub('redMed')">▶</button><button class="btn sub-btn" onclick="resetSub('redMed')">R</button></div>
+                    <div class="sheet-result-row" id="sp-sheet-result-text"></div>
+                    <div class="sheet-footer-row">
+                        <button class="btn-sheet-close" onclick="sp_closeScoreSheet()">戻</button>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="right-col">
-            <div class="warning-btns" style="margin-bottom: 10px;">
-                <button class="btn btn-rect" onclick="disqualify('red')">失</button>
-                <button class="btn btn-rect" onclick="changeFoul('red')">反</button>
-                <button class="btn btn-rect" onclick="changeWarnBoth()">両</button>
-                <button class="btn btn-rect" onclick="changeWarn('red', 1)">＋</button>
-                <button class="btn btn-rect" onclick="changeWarn('red', -1)">－</button>
-            </div>
-            <div class="warning-top">
-                <div class="warning-label">警<br>告</div>
-                <div class="card-row" id="red-cards"><div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>
-            </div>
-        </div>
-    </div>
 
-    <div class="half blue-half">
-        <div class="left-col">
-            <div class="name-row">
-                <input type="text" id="blue-name" class="name-input" value="青コーナー">
-                <div class="ippon-area"><div id="blue-ippon-txt" class="ippon-label"></div></div>
-            </div>
-            <div class="main-section">
-                <span id="blue-score" class="score-val">0</span>
-                <div class="controls-wrapper">
-                    <div class="btn-controls">
-                        <div class="btn-row">
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('blue', 1, '1')">1</button>
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('blue', 2, '2')">2</button>
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('blue', 4, '4')">4</button>
-                            <button class="btn btn-circle btn-yellow" onclick="setIppon('blue')">本</button>
-                        </div>
-                        <div class="btn-row">
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('blue', 2, '抑2')">抑2</button>
-                            <button class="btn btn-ellipse" onclick="changeScore('blue', -2, '-抑2')">－抑2</button>
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('blue', 4, '抑4')">抑4</button>
-                            <button class="btn btn-circle btn-yellow" onclick="changeScore('blue', 4, '4D')">4D</button>
-                        </div>
-                        <div class="btn-row">
-                            <button class="btn btn-circle" onclick="changeScore('blue', 1, '+')">＋</button>
-                            <button class="btn btn-circle" onclick="changeScore('blue', -1, '-')">－</button>
-                            <button class="btn btn-circle" onclick="confirmResetScore('blue')">R</button>
-                            <button class="btn btn-circle" onclick="setDrawWin('blue')">同</button>
+            <!-- 赤 (sport) -->
+            <div class="s-half sc-half s-red-half">
+                <div class="sc-left-col">
+                    <div class="name-row">
+                        <input type="text" id="sp-red-name" class="name-input" value="赤コーナー">
+                        <div class="ippon-area"><div id="sp-red-ippon-txt" class="ippon-label"></div></div>
+                    </div>
+                    <div class="sc-main-section">
+                        <span id="sp-red-score" class="score-val sc-score-val">0</span>
+                        <div class="sc-controls-wrapper">
+                            <div class="btn-controls">
+                                <div class="btn-row">
+                                    <button class="btn btn-circle btn-yellow" onclick="sp_changeScore('red',1,'1')">1</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="sp_changeScore('red',2,'2')">2</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="sp_changeScore('red',4,'4')">4</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="sp_setIppon('red')">本</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button id="sp-red-osae2-btn" class="btn btn-circle btn-yellow" onclick="sp_changeScore('red',2,'抑2')">抑2</button>
+                                    <button class="btn btn-ellipse" onclick="sp_changeScore('red',-2,'-抑2')">－抑2</button>
+                                    <button id="sp-red-osae4-btn" class="btn btn-circle btn-yellow" onclick="sp_changeScore('red',4,'抑4')">抑4</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button class="btn btn-circle" onclick="sp_changeScore('red',1,'+')">＋</button>
+                                    <button class="btn btn-circle" onclick="sp_changeScore('red',-1,'-')">－</button>
+                                    <button class="btn btn-circle" onclick="sp_confirmResetScore('red')">R</button>
+                                    <button class="btn btn-circle" onclick="sp_setDrawWin('red')">同</button>
+                                </div>
+                            </div>
+                            <div class="sc-sub-timers">
+                                <select id="sp-red-sub-selector" class="sc-sub-dropdown" onchange="sp_syncSubUI('red')">
+                                    <option value="osae" selected>抑込</option>
+                                    <option value="med">医療</option>
+                                </select>
+                                <div id="sp-red-group-osae" class="timer-group">
+                                    <div id="sp-redOsae-val" class="sc-timer-display-large">0</div>
+                                    <button class="btn btn-circle" id="sp-btn-redOsae" onclick="sp_toggleSub('redOsae')">▶</button>
+                                    <button class="btn btn-circle" onclick="sp_resetSub('redOsae')">R</button>
+                                </div>
+                                <div id="sp-red-group-med" class="timer-group" style="display:none;">
+                                    <div id="sp-redMed-val" class="sc-timer-display-large">2:00</div>
+                                    <button class="btn btn-circle" id="sp-btn-redMed" onclick="sp_toggleSub('redMed')">▶</button>
+                                    <button class="btn btn-circle" onclick="sp_resetSub('redMed')">R</button>
+                                </div>
+                                <span class="sc-sub-label">関節</span>
+                                <div class="timer-group">
+                                    <div id="sp-redKan-val" class="sc-timer-display-large">0</div>
+                                    <button class="btn btn-circle" id="sp-btn-redKan" onclick="sp_toggleSub('redKan')">▶</button>
+                                    <button class="btn btn-circle" onclick="sp_resetSub('redKan')">R</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="sub-timers">
-                        <div class="timer-group"><span class="timer-label">抑込</span><div id="blueOsae-val" class="timer-display">0</div><button class="btn sub-btn" id="btn-blueOsae" onclick="toggleSub('blueOsae')">▶</button><button class="btn sub-btn" onclick="resetSub('blueOsae')">R</button></div>
-                        <div class="timer-group"><span class="timer-label">関節</span><div id="blueKan-val" class="timer-display">0</div><button class="btn sub-btn" id="btn-blueKan" onclick="toggleSub('blueKan')">▶</button><button class="btn sub-btn" onclick="resetSub('blueKan')">R</button></div>
-                        <div class="timer-group"><span class="timer-label">医療</span><div id="blueMed-val" class="timer-display">2:00</div><button class="btn sub-btn" id="btn-blueMed" onclick="toggleSub('blueMed')">▶</button><button class="btn sub-btn" onclick="resetSub('blueMed')">R</button></div>
+                </div>
+                <div class="sc-right-col">
+                    <div class="warning-btns" style="margin-bottom:10px;">
+                        <button class="btn btn-rect" onclick="sp_disqualify('red')">失</button>
+                        <button class="btn btn-rect" onclick="sp_addFoul('red')">反</button>
+                        <button class="btn btn-rect" onclick="sp_addWarningBoth()">両</button>
+                        <button class="btn btn-rect" onclick="sp_changeWarn('red',1)">＋</button>
+                        <button class="btn btn-rect" onclick="sp_changeWarn('red',-1)">－</button>
+                    </div>
+                    <div class="warning-top">
+                        <div class="warning-label sc-warning-label">警<br>告</div>
+                        <div class="card-row" id="sp-red-cards">
+                            <div class="card sc-card"></div><div class="card sc-card"></div>
+                            <div class="card sc-card"></div><div class="card sc-card"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="right-col">
-            <div class="warning-btns" style="margin-bottom: 15px;">
-                <button class="btn btn-rect" onclick="disqualify('blue')">失</button>
-                <button class="btn btn-rect" onclick="changeFoul('blue')">反</button>
-                <button class="btn btn-rect" onclick="changeWarnBoth()">両</button>
-                <button class="btn btn-rect" onclick="changeWarn('blue', 1)">＋</button>
-                <button class="btn btn-rect" onclick="changeWarn('blue', -1)">－</button>
-            </div>
-            <div class="warning-top">
-                <div class="warning-label">警<br>告</div>
-                <div class="card-row" id="blue-cards"><div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>
-            </div>
-        </div>
-    </div>
 
-    <div class="main-timer-panel" id="main-timer-panel">
-        <div id="main-clock" class="main-timer-val">4:00</div>
-        <div class="control-row">
-            <div id="mode-dropdown" class="mode-dropdown">
-                <div class="mode-option" onclick="setMode('5min')">5分</div>
-                <div class="mode-option selected" onclick="setMode('4min')">4分</div>
-                <div class="mode-option" onclick="setMode('3min')">3分</div>
-                <div class="mode-option" onclick="setMode('0min')">カスタム試合時間</div>
-                <div class="mode-option" onclick="setMode('red_late')">赤遅刻</div>
-                <div class="mode-option" onclick="setMode('blue_late')">青遅刻</div>
-                <div class="mode-option" onclick="setMode('both_late')">両者遅刻</div>
+            <!-- 青 (sport) -->
+            <div class="s-half sc-half s-blue-half">
+                <div class="sc-left-col">
+                    <div class="name-row">
+                        <input type="text" id="sp-blue-name" class="name-input" value="青コーナー">
+                        <div class="ippon-area"><div id="sp-blue-ippon-txt" class="ippon-label"></div></div>
+                    </div>
+                    <div class="sc-main-section">
+                        <span id="sp-blue-score" class="score-val sc-score-val">0</span>
+                        <div class="sc-controls-wrapper">
+                            <div class="btn-controls">
+                                <div class="btn-row">
+                                    <button class="btn btn-circle btn-yellow" onclick="sp_changeScore('blue',1,'1')">1</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="sp_changeScore('blue',2,'2')">2</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="sp_changeScore('blue',4,'4')">4</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="sp_setIppon('blue')">本</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button id="sp-blue-osae2-btn" class="btn btn-circle btn-yellow" onclick="sp_changeScore('blue',2,'抑2')">抑2</button>
+                                    <button class="btn btn-ellipse" onclick="sp_changeScore('blue',-2,'-抑2')">－抑2</button>
+                                    <button id="sp-blue-osae4-btn" class="btn btn-circle btn-yellow" onclick="sp_changeScore('blue',4,'抑4')">抑4</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button class="btn btn-circle" onclick="sp_changeScore('blue',1,'+')">＋</button>
+                                    <button class="btn btn-circle" onclick="sp_changeScore('blue',-1,'-')">－</button>
+                                    <button class="btn btn-circle" onclick="sp_confirmResetScore('blue')">R</button>
+                                    <button class="btn btn-circle" onclick="sp_setDrawWin('blue')">同</button>
+                                </div>
+                            </div>
+                            <div class="sc-sub-timers">
+                                <select id="sp-blue-sub-selector" class="sc-sub-dropdown" onchange="sp_syncSubUI('blue')">
+                                    <option value="osae" selected>抑込</option>
+                                    <option value="med">医療</option>
+                                </select>
+                                <div id="sp-blue-group-osae" class="timer-group">
+                                    <div id="sp-blueOsae-val" class="sc-timer-display-large">0</div>
+                                    <button class="btn btn-circle" id="sp-btn-blueOsae" onclick="sp_toggleSub('blueOsae')">▶</button>
+                                    <button class="btn btn-circle" onclick="sp_resetSub('blueOsae')">R</button>
+                                </div>
+                                <div id="sp-blue-group-med" class="timer-group" style="display:none;">
+                                    <div id="sp-blueMed-val" class="sc-timer-display-large">2:00</div>
+                                    <button class="btn btn-circle" id="sp-btn-blueMed" onclick="sp_toggleSub('blueMed')">▶</button>
+                                    <button class="btn btn-circle" onclick="sp_resetSub('blueMed')">R</button>
+                                </div>
+                                <span class="sc-sub-label">関節</span>
+                                <div class="timer-group">
+                                    <div id="sp-blueKan-val" class="sc-timer-display-large">0</div>
+                                    <button class="btn btn-circle" id="sp-btn-blueKan" onclick="sp_toggleSub('blueKan')">▶</button>
+                                    <button class="btn btn-circle" onclick="sp_resetSub('blueKan')">R</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sc-right-col">
+                    <div class="warning-btns" style="margin-bottom:10px;">
+                        <button class="btn btn-rect" onclick="sp_disqualify('blue')">失</button>
+                        <button class="btn btn-rect" onclick="sp_addFoul('blue')">反</button>
+                        <button class="btn btn-rect" onclick="sp_addWarningBoth()">両</button>
+                        <button class="btn btn-rect" onclick="sp_changeWarn('blue',1)">＋</button>
+                        <button class="btn btn-rect" onclick="sp_changeWarn('blue',-1)">－</button>
+                    </div>
+                    <div class="warning-top">
+                        <div class="warning-label sc-warning-label">警<br>告</div>
+                        <div class="card-row" id="sp-blue-cards">
+                            <div class="card sc-card"></div><div class="card sc-card"></div>
+                            <div class="card sc-card"></div><div class="card sc-card"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button class="btn btn-rect" onclick="toggleDropdown()">▼</button>
-            <button class="btn btn-rect" id="btn-plus1m" onclick="addMainTime(60)">+1m</button>
-            <button class="btn btn-rect" id="btn-plus1s" onclick="addMainTime(1)">+1s</button>
-            <button class="btn btn-rect" id="main-s-btn" onclick="toggleMain()">▶</button>
-            <button class="btn btn-rect" onclick="resetMain()">R</button>
-        </div>
-    </div>
-</div>
+
+            <!-- メインタイマー (sport) -->
+            <div class="sc-main-timer-panel" id="sp-main-timer-panel">
+                <div id="sp-main-clock" class="sc-main-timer-val">4:00</div>
+                <div class="control-row">
+                    <div id="sp-mode-dropdown" class="mode-dropdown">
+                        <div class="mode-option" onclick="sp_setMode('5min')">5分</div>
+                        <div class="mode-option selected" onclick="sp_setMode('4min')">4分</div>
+                        <div class="mode-option" onclick="sp_setMode('3min')">3分</div>
+                        <div class="mode-option" onclick="sp_setMode('0min')">カスタム試合時間</div>
+                        <div class="mode-option" onclick="sp_setMode('red_late')">赤遅刻</div>
+                        <div class="mode-option" onclick="sp_setMode('blue_late')">青遅刻</div>
+                        <div class="mode-option" onclick="sp_setMode('both_late')">両者遅刻</div>
+                    </div>
+                    <button class="btn btn-rect" onclick="sp_toggleDropdown()">▼</button>
+                    <button class="btn btn-rect" onclick="sp_addMainTime(10)">+10s</button>
+                    <button class="btn btn-rect" onclick="sp_addMainTime(1)">+1s</button>
+                    <button class="btn btn-rect" id="sp-main-s-btn" onclick="sp_toggleMain()">▶</button>
+                    <button class="btn btn-rect" onclick="sp_resetMain()">R</button>
+                </div>
+            </div>
+        </div><!-- /sport-panel -->
+
+        <!-- ========================================================
+             COMBAT SCOREBOARD (combat.html)
+             ======================================================== -->
+        <div id="combat-panel" class="scoreboard-panel">
+            <button class="btn sc-reset-btn" onclick="cb_matchReset()">RESET</button>
+            <button id="cb-jp-btn" class="btn sc-jp-btn" onclick="cb_openScoreSheet()">JP</button>
+
+            <div id="cb-score-sheet-overlay" class="score-sheet-overlay">
+                <div class="sheet-container">
+                    <div class="sheet-data-area">
+                        <div class="sheet-col-names">
+                            <div class="sheet-cell red-bg">赤コーナー</div>
+                            <div class="sheet-cell blue-bg">青コーナー</div>
+                        </div>
+                        <div class="sheet-col-history" id="cb-sheet-scroll-area">
+                            <div class="history-track-wrapper">
+                                <div class="history-row red-bg" id="cb-red-history-track"></div>
+                                <div class="history-row blue-bg" id="cb-blue-history-track"></div>
+                            </div>
+                        </div>
+                        <div class="sheet-col-total">
+                            <div class="sheet-cell red-bg sheet-total-val" id="cb-sheet-red-total">0</div>
+                            <div class="sheet-cell blue-bg sheet-total-val" id="cb-sheet-blue-total">0</div>
+                        </div>
+                    </div>
+                    <div class="sheet-result-row" id="cb-sheet-result-text"></div>
+                    <div class="sheet-footer-row">
+                        <button class="btn-sheet-close" onclick="cb_closeScoreSheet()">戻</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 赤 (combat) -->
+            <div class="s-half sc-half s-red-half">
+                <div class="sc-left-col">
+                    <div class="name-row">
+                        <input type="text" id="cb-red-name" class="name-input" value="赤コーナー">
+                        <div class="ippon-area"><div id="cb-red-ippon-txt" class="ippon-label"></div></div>
+                    </div>
+                    <div class="sc-main-section">
+                        <span id="cb-red-score" class="score-val sc-score-val">0</span>
+                        <div class="sc-controls-wrapper">
+                            <div class="btn-controls">
+                                <div class="btn-row">
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_changeScore('red',1,'1')">1</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_changeScore('red',2,'2')">2</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_changeScore('red',4,'4')">4</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_setIppon('red')">本</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button id="cb-red-osae2-btn" class="btn btn-circle btn-yellow" onclick="cb_changeScore('red',2,'抑2')">抑2</button>
+                                    <button class="btn btn-ellipse" onclick="cb_changeScore('red',-2,'-抑2')">－抑2</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_changeScore('red',4,'4D')">4D</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button class="btn btn-circle" onclick="cb_changeScore('red',1,'+')">＋</button>
+                                    <button class="btn btn-circle" onclick="cb_changeScore('red',-1,'-')">－</button>
+                                    <button class="btn btn-circle" onclick="cb_confirmResetScore('red')">R</button>
+                                    <button class="btn btn-circle" onclick="cb_setDrawWin('red')">同</button>
+                                </div>
+                            </div>
+                            <div class="sc-sub-timers">
+                                <select id="cb-red-sub-selector" class="sc-sub-dropdown" onchange="cb_syncSubUI('red')">
+                                    <option value="osae" selected>抑込</option>
+                                    <option value="med">医療</option>
+                                </select>
+                                <div id="cb-red-group-osae" class="timer-group">
+                                    <div id="cb-redOsae-val" class="sc-timer-display-large">0</div>
+                                    <button class="btn btn-circle" id="cb-btn-redOsae" onclick="cb_toggleSub('redOsae')">▶</button>
+                                    <button class="btn btn-circle" onclick="cb_resetSub('redOsae')">R</button>
+                                </div>
+                                <div id="cb-red-group-med" class="timer-group" style="display:none;">
+                                    <div id="cb-redMed-val" class="sc-timer-display-large">2:00</div>
+                                    <button class="btn btn-circle" id="cb-btn-redMed" onclick="cb_toggleSub('redMed')">▶</button>
+                                    <button class="btn btn-circle" onclick="cb_resetSub('redMed')">R</button>
+                                </div>
+                                <span class="sc-sub-label">関節</span>
+                                <div class="timer-group">
+                                    <div id="cb-redKan-val" class="sc-timer-display-large">0</div>
+                                    <button class="btn btn-circle" id="cb-btn-redKan" onclick="cb_toggleSub('redKan')">▶</button>
+                                    <button class="btn btn-circle" onclick="cb_resetSub('redKan')">R</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sc-right-col">
+                    <div class="warning-btns" style="margin-bottom:10px;">
+                        <button class="btn btn-rect" onclick="cb_disqualify('red')">失</button>
+                        <button class="btn btn-rect" onclick="cb_changeFoul('red')">反</button>
+                        <button class="btn btn-rect" onclick="cb_changeWarnBoth()">両</button>
+                        <button class="btn btn-rect" onclick="cb_changeWarn('red',1)">＋</button>
+                        <button class="btn btn-rect" onclick="cb_changeWarn('red',-1)">－</button>
+                    </div>
+                    <div class="warning-top">
+                        <div class="warning-label sc-warning-label">警<br>告</div>
+                        <div class="card-row" id="cb-red-cards">
+                            <div class="card sc-card"></div><div class="card sc-card"></div>
+                            <div class="card sc-card"></div><div class="card sc-card"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 青 (combat) -->
+            <div class="s-half sc-half s-blue-half">
+                <div class="sc-left-col">
+                    <div class="name-row">
+                        <input type="text" id="cb-blue-name" class="name-input" value="青コーナー">
+                        <div class="ippon-area"><div id="cb-blue-ippon-txt" class="ippon-label"></div></div>
+                    </div>
+                    <div class="sc-main-section">
+                        <span id="cb-blue-score" class="score-val sc-score-val">0</span>
+                        <div class="sc-controls-wrapper">
+                            <div class="btn-controls">
+                                <div class="btn-row">
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_changeScore('blue',1,'1')">1</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_changeScore('blue',2,'2')">2</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_changeScore('blue',4,'4')">4</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_setIppon('blue')">本</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button id="cb-blue-osae2-btn" class="btn btn-circle btn-yellow" onclick="cb_changeScore('blue',2,'抑2')">抑2</button>
+                                    <button class="btn btn-ellipse" onclick="cb_changeScore('blue',-2,'-抑2')">－抑2</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="cb_changeScore('blue',4,'4D')">4D</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button class="btn btn-circle" onclick="cb_changeScore('blue',1,'+')">＋</button>
+                                    <button class="btn btn-circle" onclick="cb_changeScore('blue',-1,'-')">－</button>
+                                    <button class="btn btn-circle" onclick="cb_confirmResetScore('blue')">R</button>
+                                    <button class="btn btn-circle" onclick="cb_setDrawWin('blue')">同</button>
+                                </div>
+                            </div>
+                            <div class="sc-sub-timers">
+                                <select id="cb-blue-sub-selector" class="sc-sub-dropdown" onchange="cb_syncSubUI('blue')">
+                                    <option value="osae" selected>抑込</option>
+                                    <option value="med">医療</option>
+                                </select>
+                                <div id="cb-blue-group-osae" class="timer-group">
+                                    <div id="cb-blueOsae-val" class="sc-timer-display-large">0</div>
+                                    <button class="btn btn-circle" id="cb-btn-blueOsae" onclick="cb_toggleSub('blueOsae')">▶</button>
+                                    <button class="btn btn-circle" onclick="cb_resetSub('blueOsae')">R</button>
+                                </div>
+                                <div id="cb-blue-group-med" class="timer-group" style="display:none;">
+                                    <div id="cb-blueMed-val" class="sc-timer-display-large">2:00</div>
+                                    <button class="btn btn-circle" id="cb-btn-blueMed" onclick="cb_toggleSub('blueMed')">▶</button>
+                                    <button class="btn btn-circle" onclick="cb_resetSub('blueMed')">R</button>
+                                </div>
+                                <span class="sc-sub-label">関節</span>
+                                <div class="timer-group">
+                                    <div id="cb-blueKan-val" class="sc-timer-display-large">0</div>
+                                    <button class="btn btn-circle" id="cb-btn-blueKan" onclick="cb_toggleSub('blueKan')">▶</button>
+                                    <button class="btn btn-circle" onclick="cb_resetSub('blueKan')">R</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sc-right-col">
+                    <div class="warning-btns" style="margin-bottom:10px;">
+                        <button class="btn btn-rect" onclick="cb_disqualify('blue')">失</button>
+                        <button class="btn btn-rect" onclick="cb_changeFoul('blue')">反</button>
+                        <button class="btn btn-rect" onclick="cb_changeWarnBoth()">両</button>
+                        <button class="btn btn-rect" onclick="cb_changeWarn('blue',1)">＋</button>
+                        <button class="btn btn-rect" onclick="cb_changeWarn('blue',-1)">－</button>
+                    </div>
+                    <div class="warning-top">
+                        <div class="warning-label sc-warning-label">警<br>告</div>
+                        <div class="card-row" id="cb-blue-cards">
+                            <div class="card sc-card"></div><div class="card sc-card"></div>
+                            <div class="card sc-card"></div><div class="card sc-card"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メインタイマー (combat) -->
+            <div class="sc-main-timer-panel" id="cb-main-timer-panel">
+                <div id="cb-main-clock" class="sc-main-timer-val">4:00</div>
+                <div class="control-row">
+                    <div id="cb-mode-dropdown" class="mode-dropdown">
+                        <div class="mode-option" onclick="cb_setMode('5min')">5分</div>
+                        <div class="mode-option selected" onclick="cb_setMode('4min')">4分</div>
+                        <div class="mode-option" onclick="cb_setMode('3min')">3分</div>
+                        <div class="mode-option" onclick="cb_setMode('0min')">カスタム試合時間</div>
+                        <div class="mode-option" onclick="cb_setMode('red_late')">赤遅刻</div>
+                        <div class="mode-option" onclick="cb_setMode('blue_late')">青遅刻</div>
+                        <div class="mode-option" onclick="cb_setMode('both_late')">両者遅刻</div>
+                    </div>
+                    <button class="btn btn-rect" onclick="cb_toggleDropdown()">▼</button>
+                    <button class="btn btn-rect" onclick="cb_addMainTime(60)">+1m</button>
+                    <button class="btn btn-rect" onclick="cb_addMainTime(1)">+1s</button>
+                    <button class="btn btn-rect" id="cb-main-s-btn" onclick="cb_toggleMain()">▶</button>
+                    <button class="btn btn-rect" onclick="cb_resetMain()">R</button>
+                </div>
+            </div>
+        </div><!-- /combat-panel -->
+
+        <!-- ========================================================
+             BEACH SCOREBOARD (beach.html)
+             ======================================================== -->
+        <div id="beach-panel" class="scoreboard-panel">
+            <button class="btn bc-reset-btn" onclick="bc_matchReset()">RESET</button>
+            <button id="bc-jp-btn" class="btn bc-jp-btn" onclick="bc_openScoreSheet()">JP</button>
+
+            <div id="bc-score-sheet-overlay" class="score-sheet-overlay">
+                <div class="sheet-container">
+                    <div class="sheet-data-area">
+                        <div class="sheet-col-names">
+                            <div class="sheet-cell red-bg">赤コーナー</div>
+                            <div class="sheet-cell blue-bg">青コーナー</div>
+                        </div>
+                        <div class="sheet-col-history" id="bc-sheet-scroll-area">
+                            <div class="history-track-wrapper">
+                                <div class="history-row red-bg" id="bc-red-history-track"></div>
+                                <div class="history-row blue-bg" id="bc-blue-history-track"></div>
+                            </div>
+                        </div>
+                        <div class="sheet-col-total">
+                            <div class="sheet-cell red-bg sheet-total-val" id="bc-sheet-red-total">0</div>
+                            <div class="sheet-cell blue-bg sheet-total-val" id="bc-sheet-blue-total">0</div>
+                        </div>
+                    </div>
+                    <div class="sheet-result-row" id="bc-sheet-result-text"></div>
+                    <div class="sheet-footer-row">
+                        <button class="btn-sheet-close" onclick="bc_closeScoreSheet()">戻</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 赤 (beach) -->
+            <div class="s-half bc-half s-red-half">
+                <div class="bc-left-col">
+                    <div class="name-row" style="height:95px;">
+                        <input type="text" id="bc-red-name" class="name-input" style="font-size:68px;width:600px;" value="赤コーナー">
+                        <div class="ippon-area"><div id="bc-red-ippon-txt" class="ippon-label" style="font-size:64px;"></div></div>
+                    </div>
+                    <div class="bc-main-section">
+                        <span id="bc-red-score" class="score-val bc-score-val">0</span>
+                        <div class="bc-controls-wrapper">
+                            <div class="btn-controls">
+                                <div class="btn-row">
+                                    <button class="btn btn-circle btn-yellow" onclick="bc_changeScore('red',1,'1')">1</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="bc_changeScore('red',2,'2')">2</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="bc_changeScore('red',4,'4')">4</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="bc_setIppon('red')">本</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button class="btn btn-circle" onclick="bc_changeScore('red',1,'+')">＋</button>
+                                    <button class="btn btn-circle" onclick="bc_changeScore('red',-1,'-')">－</button>
+                                    <button class="btn btn-circle" onclick="bc_confirmResetScore('red')">R</button>
+                                    <button class="btn btn-circle" onclick="bc_setDrawWin('red')">同</button>
+                                </div>
+                            </div>
+                            <div class="bc-sub-timers">
+                                <div class="bc-med-label">医療</div>
+                                <div class="bc-timer-display-large" id="bc-redMed-val">2:00</div>
+                                <div style="display:flex;gap:12px;">
+                                    <button class="btn btn-circle" id="bc-btn-redMed" onclick="bc_toggleSub('redMed')">▶</button>
+                                    <button class="btn btn-circle" onclick="bc_resetSub('redMed')">R</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bc-right-col">
+                    <div class="warning-btns" style="margin-bottom:12px;">
+                        <button class="btn btn-rect" onclick="bc_disqualify('red')">失</button>
+                        <button class="btn btn-rect" onclick="bc_addFoul('red')">反</button>
+                        <button class="btn btn-rect" onclick="bc_addWarningBoth()">両</button>
+                        <button class="btn btn-rect" onclick="bc_changeWarn('red',1)">＋</button>
+                        <button class="btn btn-rect" onclick="bc_changeWarn('red',-1)">－</button>
+                    </div>
+                    <div class="warning-top">
+                        <div class="warning-label bc-warning-label">警告</div>
+                        <div class="card-row" id="bc-red-cards">
+                            <div class="card bc-card"></div><div class="card bc-card"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 青 (beach) -->
+            <div class="s-half bc-half s-blue-half">
+                <div class="bc-left-col">
+                    <div class="name-row" style="height:95px;">
+                        <input type="text" id="bc-blue-name" class="name-input" style="font-size:68px;width:600px;" value="青コーナー">
+                        <div class="ippon-area"><div id="bc-blue-ippon-txt" class="ippon-label" style="font-size:64px;"></div></div>
+                    </div>
+                    <div class="bc-main-section">
+                        <span id="bc-blue-score" class="score-val bc-score-val">0</span>
+                        <div class="bc-controls-wrapper">
+                            <div class="btn-controls">
+                                <div class="btn-row">
+                                    <button class="btn btn-circle btn-yellow" onclick="bc_changeScore('blue',1,'1')">1</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="bc_changeScore('blue',2,'2')">2</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="bc_changeScore('blue',4,'4')">4</button>
+                                    <button class="btn btn-circle btn-yellow" onclick="bc_setIppon('blue')">本</button>
+                                </div>
+                                <div class="btn-row">
+                                    <button class="btn btn-circle" onclick="bc_changeScore('blue',1,'+')">＋</button>
+                                    <button class="btn btn-circle" onclick="bc_changeScore('blue',-1,'-')">－</button>
+                                    <button class="btn btn-circle" onclick="bc_confirmResetScore('blue')">R</button>
+                                    <button class="btn btn-circle" onclick="bc_setDrawWin('blue')">同</button>
+                                </div>
+                            </div>
+                            <div class="bc-sub-timers">
+                                <div class="bc-med-label">医療</div>
+                                <div class="bc-timer-display-large" id="bc-blueMed-val">2:00</div>
+                                <div style="display:flex;gap:12px;">
+                                    <button class="btn btn-circle" id="bc-btn-blueMed" onclick="bc_toggleSub('blueMed')">▶</button>
+                                    <button class="btn btn-circle" onclick="bc_resetSub('blueMed')">R</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bc-right-col">
+                    <div class="warning-btns" style="margin-bottom:12px;">
+                        <button class="btn btn-rect" onclick="bc_disqualify('blue')">失</button>
+                        <button class="btn btn-rect" onclick="bc_addFoul('blue')">反</button>
+                        <button class="btn btn-rect" onclick="bc_addWarningBoth()">両</button>
+                        <button class="btn btn-rect" onclick="bc_changeWarn('blue',1)">＋</button>
+                        <button class="btn btn-rect" onclick="bc_changeWarn('blue',-1)">－</button>
+                    </div>
+                    <div class="warning-top">
+                        <div class="warning-label bc-warning-label">警告</div>
+                        <div class="card-row" id="bc-blue-cards">
+                            <div class="card bc-card"></div><div class="card bc-card"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メインタイマー (beach) -->
+            <div class="bc-main-timer-panel" id="bc-main-timer-panel">
+                <div id="bc-main-clock" class="bc-main-timer-val">3:00</div>
+                <div class="control-row">
+                    <div id="bc-mode-dropdown" class="mode-dropdown">
+                        <div class="mode-option" onclick="bc_setMode('5min')">5分</div>
+                        <div class="mode-option" onclick="bc_setMode('4min')">4分</div>
+                        <div class="mode-option selected" onclick="bc_setMode('3min')">3分</div>
+                        <div class="mode-option" onclick="bc_setMode('redLate')">赤遅刻</div>
+                        <div class="mode-option" onclick="bc_setMode('blueLate')">青遅刻</div>
+                        <div class="mode-option" onclick="bc_setMode('bothLate')">両者遅刻</div>
+                    </div>
+                    <button class="btn btn-rect" onclick="bc_toggleDropdown()">▼</button>
+                    <button class="btn btn-rect" onclick="bc_addMainTime(10)">+10s</button>
+                    <button class="btn btn-rect" onclick="bc_addMainTime(1)">+1s</button>
+                    <button class="btn btn-rect" id="bc-main-s-btn" onclick="bc_toggleMain()">▶</button>
+                    <button class="btn btn-rect" onclick="bc_resetMain()">R</button>
+                </div>
+            </div>
+        </div><!-- /beach-panel -->
+
+    </div><!-- /scoreboard-area -->
+</div><!-- /app -->
 
 <script>
-    function resizeApp() {
-        const app = document.getElementById('app');
-        const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-        app.style.transform = `scale(${scale})`;
-    }
-    window.addEventListener('resize', resizeApp);
-    window.addEventListener('DOMContentLoaded', resizeApp);
+/* ================================================================
+   GLOBAL
+   ================================================================ */
+function resizeApp() {
+    const app = document.getElementById('app');
+    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    app.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', resizeApp);
+window.addEventListener('DOMContentLoaded', () => {
+    resizeApp();
+    sp_syncSubUI('red'); sp_syncSubUI('blue');
+    cb_syncSubUI('red'); cb_syncSubUI('blue');
+    const ev = document.getElementById('event-selector');
+    if (ev && ev.value) switchScoreboard(ev.value);
+});
 
-    let state = {
-        red: { score: 0, warn: 0, ippon: false, techScore: 0, count4: 0, count2: 0, foulCount: 0, count4D: 0 },
-        blue: { score: 0, warn: 0, ippon: false, techScore: 0, count4: 0, count2: 0, foulCount: 0, count4D: 0 },
-        mainTime: 240, mainRun: false, mainMode: '4min',
-        subs: { 
-            redOsae: {v:0, r:false, max:20, type:'up'}, blueOsae: {v:0, r:false, max:20, type:'up'}, 
-            redKan: {v:0, r:false, max:60, type:'up'}, blueKan: {v:0, r:false, max:60, type:'up'},
-            redMed: {v:120, r:false, max:0, type:'down'}, blueMed: {v:120, r:false, max:0, type:'down'} 
-        },
-        history: [],
-        lastTechScorer: null,
-        lastWarned: null
+function switchScoreboard(val) {
+    document.getElementById('placeholder-panel').style.display = (val === '') ? 'flex' : 'none';
+    ['sport','combat','beach'].forEach(t => {
+        const p = document.getElementById(t + '-panel');
+        if (val === t) { p.classList.add('active'); }
+        else { p.classList.remove('active'); }
+    });
+}
+
+function globalAllReset() {
+    if (confirm('ページ全体をリセットしますか？')) location.reload();
+}
+
+let _audioCtx = null;
+function _beep(long) {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    const o = _audioCtx.createOscillator(), g = _audioCtx.createGain();
+    o.connect(g); g.connect(_audioCtx.destination); o.type = 'square'; o.frequency.value = 440;
+    o.start(); const d = long ? 2.5 : 0.3;
+    g.gain.setValueAtTime(0.1, _audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + d);
+    o.stop(_audioCtx.currentTime + d);
+}
+function _beepSub() {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    const play = (freq, start) => {
+        const o = _audioCtx.createOscillator(), g = _audioCtx.createGain();
+        o.connect(g); g.connect(_audioCtx.destination); o.type = 'sine'; o.frequency.value = freq;
+        o.start(start); g.gain.setValueAtTime(0.1, start);
+        g.gain.exponentialRampToValueAtTime(0.001, start + 0.6); o.stop(start + 0.6);
     };
+    play(880, _audioCtx.currentTime); play(880, _audioCtx.currentTime + 0.2);
+}
+function _fmt(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 
-    let audioCtx = null;
-    function beep(long) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.value = 440;
-        o.start(); const d = long ? 2.5 : 0.3;
-        g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d);
+/* ================================================================
+   SPORT SCOREBOARD
+   ================================================================ */
+let sp = {
+    red:  { score:0, warn:0, ippon:false, techScore:0, count4:0, count2:0, foulCount:0, count4D:0, osaeTotal:0 },
+    blue: { score:0, warn:0, ippon:false, techScore:0, count4:0, count2:0, foulCount:0, count4D:0, osaeTotal:0 },
+    mainTime:240, mainRun:false, mainMode:'4min',
+    subs:{
+        redOsae:{v:0,r:false,max:20,type:'up'}, blueOsae:{v:0,r:false,max:20,type:'up'},
+        redKan:{v:0,r:false,max:60,type:'up'},  blueKan:{v:0,r:false,max:60,type:'up'},
+        redMed:{v:120,r:false,max:0,type:'down'}, blueMed:{v:120,r:false,max:0,type:'down'}
+    },
+    history:[], lastTechScorer:null, lastWarned:null
+};
+
+function sp_isLate() { return sp.mainMode==='red_late'||sp.mainMode==='blue_late'||sp.mainMode==='both_late'; }
+function sp_toggleDropdown() { document.getElementById('sp-mode-dropdown').classList.toggle('open'); }
+
+function sp_setMode(m) {
+    sp.mainMode = m; sp_stopMain();
+    const panel = document.getElementById('sp-main-timer-panel');
+    panel.classList.remove('late-red','late-blue','late-both');
+    if (sp_isLate()) {
+        sp.mainTime = 0;
+        if (m==='red_late') panel.classList.add('late-red');
+        if (m==='blue_late') panel.classList.add('late-blue');
+        if (m==='both_late') panel.classList.add('late-both');
+        if (m.includes('red')||m.includes('both')) { sp.red.warn=0; sp_renderCards('red'); }
+        if (m.includes('blue')||m.includes('both')) { sp.blue.warn=0; sp_renderCards('blue'); }
+    } else {
+        sp.mainTime = ['5min','4min','3min'].includes(m) ? parseInt(m)*60 : 0;
     }
+    sp_updateMainDisp();
+    document.getElementById('sp-mode-dropdown').classList.remove('open');
+    sp_updateStatusLabels();
+}
 
-    function formatMinSec(s) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
-    function isLateMode() { return state.mainMode === 'red_late' || state.mainMode === 'blue_late' || state.mainMode === 'both_late'; }
-    function toggleDropdown() { document.getElementById('mode-dropdown').classList.toggle('open'); }
+function sp_renderCards(side) {
+    const cards = document.getElementById('sp-'+side+'-cards').children;
+    for (let i=0;i<4;i++) cards[i].classList.toggle('active', i < sp[side].warn);
+}
 
-    function setMode(m) {
-        state.mainMode = m; stopMain();
-        const panel = document.getElementById('main-timer-panel');
-        panel.classList.remove('late-red', 'late-blue', 'late-both');
-        if (isLateMode()) {
-            state.mainTime = 0;
-            if (m === 'red_late') panel.classList.add('late-red');
-            if (m === 'blue_late') panel.classList.add('late-blue');
-            if (m === 'both_late') panel.classList.add('late-both');
-            if (m.includes('red') || m.includes('both')) { state.red.warn = 0; renderCards('red'); }
-            if (m.includes('blue') || m.includes('both')) { state.blue.warn = 0; renderCards('blue'); }
+function sp_updateStatusLabels() {
+    const rL = document.getElementById('sp-red-ippon-txt'), bL = document.getElementById('sp-blue-ippon-txt');
+    let nR='', nB='';
+    if (sp.red.warn>=4) nR='失格'; else if (sp.red.ippon) nR='一本勝ち'; else if (sp.red.score-sp.blue.score>=8||sp.red.count4D>=2) nR='テクニカル一本勝ち';
+    if (sp.blue.warn>=4) nB='失格'; else if (sp.blue.ippon) nB='一本勝ち'; else if (sp.blue.score-sp.red.score>=8||sp.blue.count4D>=2) nB='テクニカル一本勝ち';
+    const pR=rL.innerText, pB=bL.innerText;
+    rL.innerText=nR; bL.innerText=nB;
+    if ((nR!==''&&nR!==pR)||(nB!==''&&nB!==pB)) {
+        if (nR.includes('勝ち')||nR==='失格'||nB.includes('勝ち')||nB==='失格') { _beep(true); sp_stopMain(); }
+    }
+    sp_updateNameColors();
+}
+
+function sp_updateNameColors() {
+    const rn=document.getElementById('sp-red-name'), bn=document.getElementById('sp-blue-name');
+    const rl=document.getElementById('sp-red-ippon-txt').innerText, bl=document.getElementById('sp-blue-ippon-txt').innerText;
+    rn.classList.toggle('winner-highlight', rl.includes('勝ち')||bl.includes('失格'));
+    bn.classList.toggle('winner-highlight', bl.includes('勝ち')||rl.includes('失格'));
+}
+
+function sp_recordHistory(side, typeLabel) {
+    const map={'1':'1','2':'2','4':'4','ippon':'一本','抑2':'②','-抑2':'－②','抑4':'④','4D':'4D','+':'調1','-':'－調1','Reset':'R'};
+    let entry={red:'',blue:''}; const opp=side==='red'?'blue':'red';
+    if (typeLabel==='warn1') { entry[side]='〇'; entry[opp]='0⃣'; }
+    else if (typeLabel==='warn2'||typeLabel==='warn3') { entry[side]='〇'; entry[opp]='1⃣'; }
+    else if (typeLabel==='warn4'||typeLabel==='DQ') { entry[side]='☒'; }
+    else { entry[side]=map[typeLabel]||typeLabel; }
+    if (entry.red!==''||entry.blue!=='') sp.history.push(entry);
+}
+
+function sp_disqualify(side) {
+    if (sp[side].warn>=4) return;
+    sp[side].warn=4; sp_recordHistory(side,'DQ'); sp_renderCards(side); sp_updateStatusLabels();
+}
+
+function sp_changeScore(side, d, typeLabel) {
+    sp[side].score = Math.max(0, sp[side].score+d);
+    if (typeLabel && !typeLabel.includes('warn') && typeLabel!=='ippon' && typeLabel!=='Reset') {
+        sp[side].techScore = Math.max(0, sp[side].techScore+d);
+        if (['4','抑4'].includes(typeLabel)) sp[side].count4 += (d>0?1:-1);
+        if (typeLabel==='4D') sp[side].count4D += (d>0?1:-1);
+        if (['2','抑2','-抑2'].includes(typeLabel)) sp[side].count2 += (d>0?1:-1);
+        if (d>0) sp.lastTechScorer=side;
+    }
+    if (typeLabel==='抑2') sp[side].osaeTotal+=2;
+    if (typeLabel==='抑4') sp[side].osaeTotal+=4;
+    if (typeLabel==='-抑2') sp[side].osaeTotal=Math.max(0,sp[side].osaeTotal-2);
+    const osaeDisabled = sp[side].osaeTotal>=4;
+    document.getElementById('sp-'+side+'-osae2-btn').disabled=osaeDisabled;
+    document.getElementById('sp-'+side+'-osae4-btn').disabled=osaeDisabled;
+    const scoreEl=document.getElementById('sp-'+side+'-score');
+    scoreEl.innerText=sp[side].score;
+    scoreEl.style.fontSize=sp[side].score>=10?'200px':'360px';
+    if (typeLabel) sp_recordHistory(side,typeLabel);
+    sp_updateStatusLabels();
+}
+
+function sp_confirmResetScore(side) {
+    if (confirm(`${side==='red'?'赤':'青'}コーナーの得点をリセットしますか？`)) {
+        sp[side].score=0; sp[side].ippon=false; sp[side].techScore=0; sp[side].count4=0; sp[side].count2=0; sp[side].count4D=0; sp[side].osaeTotal=0;
+        document.getElementById('sp-'+side+'-osae2-btn').disabled=false;
+        document.getElementById('sp-'+side+'-osae4-btn').disabled=false;
+        const scoreEl=document.getElementById('sp-'+side+'-score');
+        scoreEl.innerText=0; scoreEl.style.fontSize='360px';
+        sp_recordHistory(side,'Reset'); sp_updateStatusLabels();
+    }
+}
+
+function sp_addWarningBoth() {
+    if (sp.red.warn<4&&sp.blue.warn<4) {
+        sp.red.warn++; sp.blue.warn++;
+        if (sp.red.warn===2||sp.red.warn===3) sp_changeScore('blue',1,null);
+        if (sp.blue.warn===2||sp.blue.warn===3) sp_changeScore('red',1,null);
+        const sM={1:'〇',2:'〇',3:'〇',4:'☒'}, oM={1:'0⃣',2:'1⃣',3:'1⃣',4:''};
+        sp.history.push({red:sM[sp.red.warn]+(oM[sp.blue.warn]||''), blue:sM[sp.blue.warn]+(oM[sp.red.warn]||'')});
+        sp_renderCards('red'); sp_renderCards('blue'); sp_updateStatusLabels();
+    }
+}
+
+function sp_addFoul(side) {
+    if (sp[side].warn>=4) return;
+    sp[side].foulCount++;
+    const opp=side==='red'?'blue':'red';
+    if (sp[side].foulCount>=2||sp[side].warn>=3) {
+        sp[side].warn=4; sp.history.push({red:side==='red'?'☒':'', blue:side==='blue'?'☒':''});
+    } else {
+        sp[side].warn++; sp_changeScore(opp,1,null);
+        sp.history.push({red:side==='red'?'反':'1', blue:side==='blue'?'反':'1'});
+    }
+    sp_renderCards(side); sp_updateStatusLabels();
+}
+
+function sp_changeWarn(side, d) {
+    const opp=side==='red'?'blue':'red';
+    if (d<0) {
+        if (sp[side].warn>0) {
+            if (sp[side].warn===2||sp[side].warn===3) sp_changeScore(opp,-1,null);
+            for (let i=sp.history.length-1;i>=0;i--) {
+                if (sp.history[i][side]==='〇'||sp.history[i][side]==='☒'||sp.history[i][side]==='反') { sp.history.splice(i,1); break; }
+            }
+            sp[side].warn--;
+        }
+    } else {
+        if (sp[side].warn<4) {
+            sp[side].warn++; sp.lastWarned=side;
+            if (sp[side].warn===1) sp_recordHistory(side,'warn1');
+            else if (sp[side].warn===2) { sp_changeScore(opp,1,null); sp_recordHistory(side,'warn2'); }
+            else if (sp[side].warn===3) { sp_changeScore(opp,1,null); sp_recordHistory(side,'warn3'); }
+            else if (sp[side].warn===4) sp_recordHistory(side,'warn4');
+        }
+    }
+    sp_renderCards(side); sp_updateStatusLabels();
+}
+
+function sp_checkLateWarnings() {
+    const time=sp.mainTime, targets=[];
+    if (sp.mainMode==='red_late'||sp.mainMode==='both_late') targets.push('red');
+    if (sp.mainMode==='blue_late'||sp.mainMode==='both_late') targets.push('blue');
+    targets.forEach(side => {
+        if (time===30&&sp[side].warn<1) sp_changeWarn(side,1);
+        if (time===60&&sp[side].warn<2) sp_changeWarn(side,1);
+        if (time===90&&sp[side].warn<3) sp_changeWarn(side,1);
+        if (time===120&&sp[side].warn<4) sp_changeWarn(side,1);
+    });
+}
+
+function sp_getMatchResultText() {
+    const r=sp.red, b=sp.blue;
+    if (r.warn>=4) return '赤コーナーの選手の失格で青コーナーの選手の勝利です';
+    if (b.warn>=4) return '青コーナーの選手の失格で赤コーナーの選手の勝利です';
+    if (r.ippon) return '赤コーナーの選手の一本勝ちです';
+    if (b.ippon) return '青コーナーの選手の一本勝ちです';
+    if (r.score-b.score>=8||r.count4D>=2) return '赤コーナーの選手のテクニカル一本勝ちです';
+    if (b.score-r.score>=8||b.count4D>=2) return '青コーナーの選手のテクニカル一本勝ちです';
+    if (r.score>b.score) return '赤コーナーの選手のポイント判定勝ちです';
+    if (b.score>r.score) return '青コーナーの選手のポイント判定勝ちです';
+    if (r.score===b.score) {
+        if (r.techScore>b.techScore) return '赤コーナーの選手のテクニカルポイント差勝ちです';
+        if (b.techScore>r.techScore) return '青コーナーの選手のテクニカルポイント差勝ちです';
+        if (r.count4>b.count4) return '赤コーナーの選手のビックポイント差勝ちです';
+        if (b.count4>r.count4) return '青コーナーの選手のビックポイント差勝ちです';
+        if (r.count2>b.count2) return '赤コーナーの選手のビックポイント差勝ちです';
+        if (b.count2>r.count2) return '青コーナーの選手のビックポイント差勝ちです';
+        if (sp.lastTechScorer==='red') return '赤コーナーの選手のラストテクニカルポイント判定勝ちです';
+        if (sp.lastTechScorer==='blue') return '青コーナーの選手のラストテクニカルポイント判定勝ちです';
+        if (sp.lastWarned==='blue') return '赤コーナーの選手の警告判定勝ちです';
+        if (sp.lastWarned==='red') return '青コーナーの選手の警告判定勝ちです';
+    }
+    return '';
+}
+
+function sp_openScoreSheet() {
+    const rH=document.getElementById('sp-red-history-track'), bH=document.getElementById('sp-blue-history-track');
+    rH.innerHTML=''; bH.innerHTML='';
+    sp.history.forEach(h => {
+        const rd=document.createElement('div'); rd.className='history-item'; rd.innerText=h.red; rH.appendChild(rd);
+        const bd=document.createElement('div'); bd.className='history-item'; bd.innerText=h.blue; bH.appendChild(bd);
+    });
+    document.getElementById('sp-sheet-red-total').innerText=sp.red.warn>=4?'失格':(sp.red.ippon?'一本':sp.red.score);
+    document.getElementById('sp-sheet-blue-total').innerText=sp.blue.warn>=4?'失格':(sp.blue.ippon?'一本':sp.blue.score);
+    document.getElementById('sp-sheet-result-text').innerText=sp_getMatchResultText();
+    document.getElementById('sp-score-sheet-overlay').style.display='flex';
+    const sa=document.getElementById('sp-sheet-scroll-area');
+    setTimeout(()=>{sa.scrollLeft=sa.scrollWidth;},50);
+}
+function sp_closeScoreSheet() { document.getElementById('sp-score-sheet-overlay').style.display='none'; }
+function sp_setIppon(side) { sp[side].ippon=true; sp_recordHistory(side,'ippon'); sp_updateStatusLabels(); }
+function sp_setDrawWin(side) { document.getElementById('sp-'+side+'-ippon-txt').innerText='判定勝ち'; _beep(true); sp_stopMain(); sp_updateNameColors(); }
+function sp_toggleMain() { sp.mainRun=!sp.mainRun; document.getElementById('sp-main-s-btn').innerText=sp.mainRun?'⏸':'▶'; }
+function sp_stopMain() { sp.mainRun=false; document.getElementById('sp-main-s-btn').innerText='▶'; }
+function sp_addMainTime(s) { sp.mainTime+=s; sp_updateMainDisp(); }
+function sp_resetMain() { sp_setMode(sp.mainMode); }
+function sp_updateMainDisp() { document.getElementById('sp-main-clock').innerText=_fmt(sp.mainTime); }
+
+function sp_syncSubUI(side) {
+    const m=document.getElementById('sp-'+side+'-sub-selector').value;
+    document.getElementById('sp-'+side+'-group-osae').style.display=m==='osae'?'flex':'none';
+    document.getElementById('sp-'+side+'-group-med').style.display=m==='med'?'flex':'none';
+}
+
+function sp_toggleSub(id) {
+    if (!sp.subs[id].r) {
+        const side=id.startsWith('red')?'red':'blue';
+        if (id.endsWith('Osae')) { const jId=side+'Kan'; if(sp.subs[jId].r){sp.subs[jId].r=false;document.getElementById('sp-btn-'+jId).innerText='▶';} }
+        else if (id.endsWith('Kan')) { const oId=side+'Osae'; if(sp.subs[oId].r){sp.subs[oId].r=false;document.getElementById('sp-btn-'+oId).innerText='▶';} }
+    }
+    sp.subs[id].r=!sp.subs[id].r;
+    document.getElementById('sp-btn-'+id).innerText=sp.subs[id].r?'⏸':'▶';
+}
+
+function sp_resetSub(id) {
+    sp.subs[id].r=false; sp.subs[id].v=sp.subs[id].type==='up'?0:120;
+    document.getElementById('sp-'+id+'-val').innerText=sp.subs[id].type==='up'?0:'2:00';
+    document.getElementById('sp-btn-'+id).innerText='▶';
+}
+
+function sp_allReset() { if(confirm('全てリセットしますか？')) location.reload(); }
+
+function sp_matchReset() {
+    if (confirm('全てリセットしますか？')) {
+        sp.red={score:0,warn:0,ippon:false,techScore:0,count4:0,count2:0,foulCount:0,count4D:0,osaeTotal:0};
+        sp.blue={score:0,warn:0,ippon:false,techScore:0,count4:0,count2:0,foulCount:0,count4D:0,osaeTotal:0};
+        sp.history=[]; sp.lastTechScorer=null; sp.lastWarned=null;
+        ['red','blue'].forEach(side=>{
+            const se=document.getElementById('sp-'+side+'-score'); se.innerText=0; se.style.fontSize='360px';
+            document.getElementById('sp-'+side+'-ippon-txt').innerText='';
+            document.getElementById('sp-'+side+'-name').value=side==='red'?'赤コーナー':'青コーナー';
+            document.getElementById('sp-'+side+'-osae2-btn').disabled=false;
+            document.getElementById('sp-'+side+'-osae4-btn').disabled=false;
+            sp_renderCards(side);
+            ['Osae','Kan','Med'].forEach(t=>sp_resetSub(side+t));
+            document.getElementById('sp-'+side+'-sub-selector').value='osae'; sp_syncSubUI(side);
+        });
+        sp_updateNameColors(); sp_setMode(sp.mainMode);
+    }
+}
+
+setInterval(()=>{
+    if (sp.mainRun) {
+        if (sp_isLate()) {
+            if (sp.mainTime<120) { sp.mainTime++; sp_updateMainDisp(); sp_checkLateWarnings(); if(sp.mainTime>=120){sp_stopMain();_beep(true);} }
         } else {
-            state.mainTime = (m==='5min'?300 : m==='4min'?240 : m==='3min'?180 : 0);
+            if (sp.mainTime>0) { sp.mainTime--; sp_updateMainDisp(); if(sp.mainTime===0){sp_stopMain();_beep(true);} }
         }
-        updateMainDisp();
-        document.getElementById('mode-dropdown').classList.remove('open');
-        updateStatusLabels();
     }
-
-    function renderCards(side) {
-        const count = state[side].warn;
-        const cards = document.getElementById(`${side}-cards`).children;
-        for (let i = 0; i < 4; i++) cards[i].classList.toggle('active', i < count);
-    }
-
-    function recordHistory(side, typeLabel) {
-        const map = { 
-            '1':'1', '2':'2', '4':'4', 'ippon':'一本',
-            '抑2':'②', '-抑2':'－②', '抑4':'④', '4D':'4D',
-            '+':'調1', '-':'－調1', 'Reset':'R' 
-        };
-        let entry = { red: '', blue: '' };
-        const opponent = side === 'red' ? 'blue' : 'red';
-        if (typeLabel === 'warn1') { entry[side] = '〇'; entry[opponent] = '0⃣'; } 
-        else if (typeLabel === 'warn2' || typeLabel === 'warn3') { entry[side] = '〇'; entry[opponent] = '1⃣'; } 
-        else if (typeLabel === 'warn4') { entry[side] = '☒'; entry[opponent] = ''; } 
-        else { entry[side] = map[typeLabel] || typeLabel; entry[opponent] = ''; }
-        if (entry.red !== '' || entry.blue !== '') state.history.push(entry);
-    }
-
-    function changeScore(side, d, typeLabel) {
-        state[side].score = Math.max(0, state[side].score + d);
-        if (typeLabel && !typeLabel.includes('warn') && typeLabel !== 'ippon' && typeLabel !== 'Reset') {
-            state[side].techScore = Math.max(0, state[side].techScore + d);
-            if (['4', '抑4', '4D'].includes(typeLabel)) state[side].count4 += (d > 0 ? 1 : -1);
-            if (['2', '抑2', '-抑2'].includes(typeLabel)) state[side].count2 += (d > 0 ? 1 : -1);
-            if (typeLabel === '4D') state[side].count4D += (d > 0 ? 1 : -1);
-            if (d > 0) state.lastTechScorer = side;
+    for (let k in sp.subs) {
+        let t=sp.subs[k];
+        if (t.r) {
+            t.v+=t.type==='up'?1:-1;
+            document.getElementById('sp-'+k+'-val').innerText=t.type==='up'?t.v:_fmt(t.v);
+            if ((t.type==='up'&&t.v>=t.max)||(t.type==='down'&&t.v<=0)) { t.r=false; _beepSub(); document.getElementById('sp-btn-'+k).innerText='▶'; }
         }
-        
-        const scoreEl = document.getElementById(`${side}-score`);
-        scoreEl.innerText = state[side].score;
-        scoreEl.style.fontSize = state[side].score >= 10 ? '220px' : '350px';
-
-        if (typeLabel) recordHistory(side, typeLabel);
-        updateStatusLabels();
     }
+}, 1000);
 
-    function changeWarn(side, d) {
-        const opponent = side === 'red' ? 'blue' : 'red';
-        if (d < 0) {
-            if (state[side].warn > 0) {
-                for (let i = state.history.length - 1; i >= 0; i--) {
-                    const h = state.history[i];
-                    if (h[side] === '〇' || h[side] === '☒') {
-                        if (state[side].warn === 2 || state[side].warn === 3) {
-                            changeScore(opponent, -1, null);
-                        }
-                        state.history.splice(i, 1);
-                        break;
-                    }
+/* ================================================================
+   COMBAT SCOREBOARD
+   ================================================================ */
+let cb = {
+    red:  { score:0, warn:0, ippon:false, techScore:0, count4:0, count2:0, foulCount:0, count4D:0 },
+    blue: { score:0, warn:0, ippon:false, techScore:0, count4:0, count2:0, foulCount:0, count4D:0 },
+    mainTime:240, mainRun:false, mainMode:'4min',
+    subs:{
+        redOsae:{v:0,r:false,max:20,type:'up'}, blueOsae:{v:0,r:false,max:20,type:'up'},
+        redKan:{v:0,r:false,max:60,type:'up'},  blueKan:{v:0,r:false,max:60,type:'up'},
+        redMed:{v:120,r:false,max:0,type:'down'}, blueMed:{v:120,r:false,max:0,type:'down'}
+    },
+    history:[], lastTechScorer:null, lastWarned:null
+};
+
+function cb_isLate() { return cb.mainMode==='red_late'||cb.mainMode==='blue_late'||cb.mainMode==='both_late'; }
+function cb_toggleDropdown() { document.getElementById('cb-mode-dropdown').classList.toggle('open'); }
+
+function cb_setMode(m) {
+    cb.mainMode=m; cb_stopMain();
+    const panel=document.getElementById('cb-main-timer-panel');
+    panel.classList.remove('late-red','late-blue','late-both');
+    if (cb_isLate()) {
+        cb.mainTime=0;
+        if (m==='red_late') panel.classList.add('late-red');
+        if (m==='blue_late') panel.classList.add('late-blue');
+        if (m==='both_late') panel.classList.add('late-both');
+        if (m.includes('red')||m.includes('both')) { cb.red.warn=0; cb_renderCards('red'); }
+        if (m.includes('blue')||m.includes('both')) { cb.blue.warn=0; cb_renderCards('blue'); }
+    } else {
+        cb.mainTime=['5min','4min','3min'].includes(m)?parseInt(m)*60:0;
+    }
+    cb_updateMainDisp();
+    document.getElementById('cb-mode-dropdown').classList.remove('open');
+    cb_updateStatusLabels();
+}
+
+function cb_renderCards(side) {
+    const cards=document.getElementById('cb-'+side+'-cards').children;
+    for (let i=0;i<4;i++) cards[i].classList.toggle('active',i<cb[side].warn);
+}
+
+function cb_updateStatusLabels() {
+    const rL=document.getElementById('cb-red-ippon-txt'), bL=document.getElementById('cb-blue-ippon-txt');
+    let nR='', nB='';
+    if (cb.red.warn>=4) nR='失格'; else if (cb.red.ippon) nR='一本勝ち'; else if (cb.red.score-cb.blue.score>=8||cb.red.count4D>=2) nR='テクニカル一本勝ち';
+    if (cb.blue.warn>=4) nB='失格'; else if (cb.blue.ippon) nB='一本勝ち'; else if (cb.blue.score-cb.red.score>=8||cb.blue.count4D>=2) nB='テクニカル一本勝ち';
+    const pR=rL.innerText, pB=bL.innerText;
+    rL.innerText=nR; bL.innerText=nB;
+    if ((nR!==''&&nR!==pR)||(nB!==''&&nB!==pB)) {
+        if (nR.includes('勝ち')||nR==='失格'||nB.includes('勝ち')||nB==='失格') { _beep(true); cb_stopMain(); }
+    }
+    cb_updateNameColors();
+}
+
+function cb_updateNameColors() {
+    const rn=document.getElementById('cb-red-name'), bn=document.getElementById('cb-blue-name');
+    const rl=document.getElementById('cb-red-ippon-txt').innerText, bl=document.getElementById('cb-blue-ippon-txt').innerText;
+    rn.classList.toggle('winner-highlight',rl.includes('勝ち')||bl.includes('失格'));
+    bn.classList.toggle('winner-highlight',bl.includes('勝ち')||rl.includes('失格'));
+}
+
+function cb_recordHistory(side, typeLabel) {
+    const map={'1':'1','2':'2','4':'4','ippon':'一本','抑2':'②','-抑2':'－②','4D':'4D','+':'調1','-':'－調1','Reset':'R'};
+    let entry={red:'',blue:''}; const opp=side==='red'?'blue':'red';
+    if (typeLabel==='warn1') { entry[side]='〇'; entry[opp]='0⃣'; }
+    else if (typeLabel==='warn2'||typeLabel==='warn3') { entry[side]='〇'; entry[opp]='1⃣'; }
+    else if (typeLabel==='warn4'||typeLabel==='DQ') { entry[side]='☒'; }
+    else { entry[side]=map[typeLabel]||typeLabel; }
+    if (entry.red!==''||entry.blue!=='') cb.history.push(entry);
+}
+
+function cb_disqualify(side) {
+    if (cb[side].warn>=4) return;
+    cb[side].warn=4; cb_recordHistory(side,'DQ'); cb_renderCards(side); cb_updateStatusLabels();
+}
+
+function cb_changeScore(side, d, typeLabel) {
+    cb[side].score=Math.max(0,cb[side].score+d);
+    if (typeLabel&&!typeLabel.includes('warn')&&typeLabel!=='ippon'&&typeLabel!=='Reset') {
+        cb[side].techScore=Math.max(0,cb[side].techScore+d);
+        if (['4'].includes(typeLabel)) cb[side].count4+=(d>0?1:-1);
+        if (typeLabel==='4D') cb[side].count4D+=(d>0?1:-1);
+        if (['2','抑2','-抑2'].includes(typeLabel)) cb[side].count2+=(d>0?1:-1);
+        if (d>0) cb.lastTechScorer=side;
+    }
+    if (typeLabel==='抑2') { document.getElementById('cb-'+side+'-osae2-btn').disabled=true; }
+    else if (typeLabel==='-抑2') { document.getElementById('cb-'+side+'-osae2-btn').disabled=false; }
+    const scoreEl=document.getElementById('cb-'+side+'-score');
+    scoreEl.innerText=cb[side].score;
+    scoreEl.style.fontSize=cb[side].score>=10?'200px':'360px';
+    if (typeLabel) cb_recordHistory(side,typeLabel);
+    cb_updateStatusLabels();
+}
+
+function cb_confirmResetScore(side) {
+    if (confirm(`${side==='red'?'赤':'青'}コーナーの得点をリセットしますか？`)) {
+        cb[side].score=0; cb[side].ippon=false; cb[side].techScore=0; cb[side].count4=0; cb[side].count2=0; cb[side].count4D=0;
+        document.getElementById('cb-'+side+'-osae2-btn').disabled=false;
+        const scoreEl=document.getElementById('cb-'+side+'-score');
+        scoreEl.innerText=0; scoreEl.style.fontSize='360px';
+        cb_recordHistory(side,'Reset'); cb_updateStatusLabels();
+    }
+}
+
+function cb_changeWarnBoth() {
+    if (cb.red.warn<4&&cb.blue.warn<4) {
+        cb.red.warn++; cb.blue.warn++;
+        let entry={red:'',blue:''};
+        if (cb.red.warn===1) entry.red='〇'; else if (cb.red.warn===2||cb.red.warn===3) { entry.red='〇'; cb_changeScore('blue',1,null); } else if (cb.red.warn===4) entry.red='☒';
+        if (cb.blue.warn===1) entry.blue='〇'; else if (cb.blue.warn===2||cb.blue.warn===3) { entry.blue='〇'; cb_changeScore('red',1,null); } else if (cb.blue.warn===4) entry.blue='☒';
+        cb.history.push(entry);
+        cb_renderCards('red'); cb_renderCards('blue'); cb_updateStatusLabels();
+    }
+}
+
+function cb_changeFoul(side) {
+    if (cb[side].warn>=4) return;
+    const opp=side==='red'?'blue':'red';
+    cb[side].foulCount++;
+    if (cb[side].foulCount>=2) cb[side].warn=4;
+    else cb[side].warn++;
+    const currentWarn=cb[side].warn;
+    let entry={red:'',blue:''};
+    if (currentWarn<4) { cb_changeScore(opp,1,null); entry[side]='反'; entry[opp]='1'; }
+    else { entry[side]='☒'; }
+    cb.history.push(entry);
+    cb_renderCards(side); cb_updateStatusLabels();
+}
+
+function cb_changeWarn(side, d) {
+    const opp=side==='red'?'blue':'red';
+    if (d<0) {
+        if (cb[side].warn>0) {
+            for (let i=cb.history.length-1;i>=0;i--) {
+                const h=cb.history[i];
+                if (h[side]==='〇'||h[side]==='☒') {
+                    if (cb[side].warn===2||cb[side].warn===3) cb_changeScore(opp,-1,null);
+                    cb.history.splice(i,1); break;
                 }
-                state[side].warn--;
             }
-        } else {
-            if (state[side].warn < 4) {
-                state[side].warn++;
-                const current = state[side].warn;
-                state.lastWarned = side;
-                if (current === 1) recordHistory(side, 'warn1');
-                else if (current === 2) { changeScore(opponent, 1, null); recordHistory(side, 'warn2'); }
-                else if (current === 3) { changeScore(opponent, 1, null); recordHistory(side, 'warn3'); }
-                else if (current === 4) recordHistory(side, 'warn4');
-            }
+            cb[side].warn--;
         }
-        renderCards(side); 
-        updateStatusLabels();
-    }
-
-    function changeWarnBoth() {
-        if (state.red.warn < 4 && state.blue.warn < 4) {
-            state.red.warn++;
-            state.blue.warn++;
-            let entry = { red: '', blue: '' };
-            if (state.red.warn === 1) entry.red = '〇';
-            else if (state.red.warn === 2 || state.red.warn === 3) { entry.red = '〇'; changeScore('blue', 1, null); }
-            else if (state.red.warn === 4) entry.red = '☒';
-            if (state.blue.warn === 1) entry.blue = '〇';
-            else if (state.blue.warn === 2 || state.blue.warn === 3) { entry.blue = '〇'; changeScore('red', 1, null); }
-            else if (state.blue.warn === 4) entry.blue = '☒';
-            state.history.push(entry);
-            renderCards('red'); renderCards('blue');
-            updateStatusLabels();
+    } else {
+        if (cb[side].warn<4) {
+            cb[side].warn++; cb.lastWarned=side;
+            if (cb[side].warn===1) cb_recordHistory(side,'warn1');
+            else if (cb[side].warn===2) { cb_changeScore(opp,1,null); cb_recordHistory(side,'warn2'); }
+            else if (cb[side].warn===3) { cb_changeScore(opp,1,null); cb_recordHistory(side,'warn3'); }
+            else if (cb[side].warn===4) cb_recordHistory(side,'warn4');
         }
     }
+    cb_renderCards(side); cb_updateStatusLabels();
+}
 
-    function changeFoul(side) {
-        if (state[side].warn >= 4) return;
-        const opponent = side === 'red' ? 'blue' : 'red';
-        state[side].foulCount++;
-        state[side].warn++;
-        
-        // いずれかの選手の「反」ボタンが2回押された場合失格
-        if (state[side].foulCount >= 2) {
-            state[side].warn = 4;
-        }
+function cb_checkLateWarnings() {
+    const time=cb.mainTime, targets=[];
+    if (cb.mainMode==='red_late'||cb.mainMode==='both_late') targets.push('red');
+    if (cb.mainMode==='blue_late'||cb.mainMode==='both_late') targets.push('blue');
+    targets.forEach(side=>{
+        if (time===30&&cb[side].warn<1) cb_changeWarn(side,1);
+        if (time===60&&cb[side].warn<2) cb_changeWarn(side,1);
+        if (time===90&&cb[side].warn<3) cb_changeWarn(side,1);
+        if (time===120&&cb[side].warn<4) cb_changeWarn(side,1);
+    });
+}
 
-        const currentWarn = state[side].warn;
-        let entry = { red: '', blue: '' };
-
-        if (currentWarn < 4) {
-            // 1, 2, 3枚目の警告カード点灯時
-            changeScore(opponent, 1, null);
-            entry[side] = '反';
-            entry[opponent] = '1';
-        } else {
-            // 4枚目の警告カード点灯時（または反2回による失格）
-            entry[side] = '☒';
-        }
-        
-        state.history.push(entry);
-        renderCards(side);
-        updateStatusLabels();
+function cb_getMatchResultText() {
+    const r=cb.red, b=cb.blue;
+    if (r.warn>=4) return '赤コーナーの選手の失格で青コーナーの選手の勝利です';
+    if (b.warn>=4) return '青コーナーの選手の失格で赤コーナーの選手の勝利です';
+    if (r.ippon) return '赤コーナーの選手の一本勝ちです';
+    if (b.ippon) return '青コーナーの選手の一本勝ちです';
+    if (r.score-b.score>=8||r.count4D>=2) return '赤コーナーの選手のテクニカル一本勝ちです';
+    if (b.score-r.score>=8||b.count4D>=2) return '青コーナーの選手のテクニカル一本勝ちです';
+    if (r.score>b.score) return '赤コーナーの選手のポイント判定勝ちです';
+    if (b.score>r.score) return '青コーナーの選手のポイント判定勝ちです';
+    if (r.score===b.score) {
+        if (r.techScore>b.techScore) return '赤コーナーの選手のテクニカルポイント差勝ちです';
+        if (b.techScore>r.techScore) return '青コーナーの選手のテクニカルポイント差勝ちです';
+        if (r.count4>b.count4) return '赤コーナーの選手のビックポイント差勝ちです';
+        if (b.count4>r.count4) return '青コーナーの選手のビックポイント差勝ちです';
+        if (r.count2>b.count2) return '赤コーナーの選手のビックポイント差勝ちです';
+        if (b.count2>r.count2) return '青コーナーの選手のビックポイント差勝ちです';
+        if (cb.lastTechScorer==='red') return '赤コーナーの選手のラストテクニカルポイント判定勝ちです';
+        if (cb.lastTechScorer==='blue') return '青コーナーの選手のラストテクニカルポイント判定勝ちです';
+        if (cb.lastWarned==='red') return '青コーナーの選手の警告判定勝ちです';
+        if (cb.lastWarned==='blue') return '赤コーナーの選手の警告判定勝ちです';
     }
+    return '';
+}
 
-    function disqualify(side) {
-        if (state[side].warn >= 4) return;
-        state[side].warn = 4;
-        let entry = { red: '', blue: '' };
-        entry[side] = '☒';
-        state.history.push(entry);
-        renderCards(side);
-        updateStatusLabels();
+function cb_openScoreSheet() {
+    const rH=document.getElementById('cb-red-history-track'), bH=document.getElementById('cb-blue-history-track');
+    rH.innerHTML=''; bH.innerHTML='';
+    cb.history.forEach(h=>{
+        const rd=document.createElement('div'); rd.className='history-item'; rd.innerText=h.red; rH.appendChild(rd);
+        const bd=document.createElement('div'); bd.className='history-item'; bd.innerText=h.blue; bH.appendChild(bd);
+    });
+    document.getElementById('cb-sheet-red-total').innerText=cb.red.warn>=4?'失格':(cb.red.ippon?'一本':cb.red.score);
+    document.getElementById('cb-sheet-blue-total').innerText=cb.blue.warn>=4?'失格':(cb.blue.ippon?'一本':cb.blue.score);
+    document.getElementById('cb-sheet-result-text').innerText=cb_getMatchResultText();
+    document.getElementById('cb-score-sheet-overlay').style.display='flex';
+    const sa=document.getElementById('cb-sheet-scroll-area');
+    setTimeout(()=>{sa.scrollLeft=sa.scrollWidth;},50);
+}
+function cb_closeScoreSheet() { document.getElementById('cb-score-sheet-overlay').style.display='none'; }
+function cb_setIppon(side) { cb[side].ippon=true; cb_recordHistory(side,'ippon'); cb_updateStatusLabels(); }
+function cb_setDrawWin(side) { document.getElementById('cb-'+side+'-ippon-txt').innerText='判定勝ち'; _beep(true); cb_stopMain(); cb_updateNameColors(); }
+function cb_toggleMain() { cb.mainRun=!cb.mainRun; document.getElementById('cb-main-s-btn').innerText=cb.mainRun?'⏸':'▶'; }
+function cb_stopMain() { cb.mainRun=false; document.getElementById('cb-main-s-btn').innerText='▶'; }
+function cb_addMainTime(s) { cb.mainTime+=s; cb_updateMainDisp(); }
+function cb_resetMain() { cb_setMode(cb.mainMode); }
+function cb_updateMainDisp() { document.getElementById('cb-main-clock').innerText=_fmt(cb.mainTime); }
+
+function cb_syncSubUI(side) {
+    const m=document.getElementById('cb-'+side+'-sub-selector').value;
+    document.getElementById('cb-'+side+'-group-osae').style.display=m==='osae'?'flex':'none';
+    document.getElementById('cb-'+side+'-group-med').style.display=m==='med'?'flex':'none';
+}
+
+function cb_toggleSub(id) {
+    if (!cb.subs[id].r) {
+        const side=id.startsWith('red')?'red':'blue';
+        if (id.endsWith('Osae')) { const jId=side+'Kan'; if(cb.subs[jId].r){cb.subs[jId].r=false;document.getElementById('cb-btn-'+jId).innerText='▶';} }
+        else if (id.endsWith('Kan')) { const oId=side+'Osae'; if(cb.subs[oId].r){cb.subs[oId].r=false;document.getElementById('cb-btn-'+oId).innerText='▶';} }
     }
+    cb.subs[id].r=!cb.subs[id].r;
+    document.getElementById('cb-btn-'+id).innerText=cb.subs[id].r?'⏸':'▶';
+}
 
-    function checkLateWarnings() {
-        const time = state.mainTime;
-        const targets = [];
-        if (state.mainMode === 'red_late' || state.mainMode === 'both_late') targets.push('red');
-        if (state.mainMode === 'blue_late' || state.mainMode === 'both_late') targets.push('blue');
-        targets.forEach(side => {
-            if (time === 30 && state[side].warn < 1) changeWarn(side, 1);
-            if (time === 60 && state[side].warn < 2) changeWarn(side, 1);
-            if (time === 90 && state[side].warn < 3) changeWarn(side, 1);
-            if (time === 120 && state[side].warn < 4) changeWarn(side, 1);
+function cb_resetSub(id) {
+    cb.subs[id].r=false; cb.subs[id].v=cb.subs[id].type==='up'?0:120;
+    document.getElementById('cb-'+id+'-val').innerText=cb.subs[id].type==='up'?0:'2:00';
+    document.getElementById('cb-btn-'+id).innerText='▶';
+}
+
+function cb_allReset() { if(confirm('全てリセットしますか？')) location.reload(); }
+
+function cb_matchReset() {
+    if (confirm('全てリセットしますか？')) {
+        cb.red={score:0,warn:0,ippon:false,techScore:0,count4:0,count2:0,foulCount:0,count4D:0};
+        cb.blue={score:0,warn:0,ippon:false,techScore:0,count4:0,count2:0,foulCount:0,count4D:0};
+        cb.history=[]; cb.lastTechScorer=null; cb.lastWarned=null;
+        ['red','blue'].forEach(side=>{
+            const se=document.getElementById('cb-'+side+'-score'); se.innerText=0; se.style.fontSize='360px';
+            document.getElementById('cb-'+side+'-ippon-txt').innerText='';
+            document.getElementById('cb-'+side+'-name').value=side==='red'?'赤コーナー':'青コーナー';
+            document.getElementById('cb-'+side+'-osae2-btn').disabled=false;
+            cb_renderCards(side);
+            ['Osae','Kan','Med'].forEach(t=>cb_resetSub(side+t));
+            document.getElementById('cb-'+side+'-sub-selector').value='osae'; cb_syncSubUI(side);
         });
+        cb_updateNameColors(); cb_setMode(cb.mainMode);
     }
+}
 
-    function getMatchResultText() {
-        const r = state.red; const b = state.blue;
-        if (r.warn >= 4) return "赤コーナーの選手の失格で青コーナーの選手の勝利です";
-        if (b.warn >= 4) return "青コーナーの選手の失格で赤コーナーの選手の勝利です";
-        if (r.ippon) return "赤コーナーの選手の一本勝ちです";
-        if (b.ippon) return "青コーナーの選手の一本勝ちです";
-        if (r.score - b.score >= 8 || r.count4D >= 2) return "赤コーナーの選手のテクニカル一本勝ちです";
-        if (b.score - r.score >= 8 || b.count4D >= 2) return "青コーナーの選手のテクニカル一本勝ちです";
-        if (r.score > b.score) return "赤コーナーの選手のポイント判定勝ちです";
-        if (b.score > r.score) return "青コーナーの選手のポイント判定勝ちです";
-        if (r.score === b.score) {
-            if (r.techScore > b.techScore) return "赤コーナーの選手のテクニカルポイント差勝ちです";
-            if (b.techScore > r.techScore) return "青コーナーの選手のテクニカルポイント差勝ちです";
-            if (r.count4 > b.count4) return "赤コーナーの選手のビックポイント差勝ちです";
-            if (b.count4 > r.count4) return "青コーナーの選手のビックポイント差勝ちです";
-            if (r.count2 > b.count2) return "赤コーナーの選手のビックポイント差勝ちです";
-            if (b.count2 > r.count2) return "青コーナーの選手のビックポイント差勝ちです";
-            if (state.lastTechScorer === 'red') return "赤コーナーの選手のラストテクニカルポイント判定勝ちです";
-            if (state.lastTechScorer === 'blue') return "青コーナーの選手のラストテクニカルポイント判定勝ちです";
-            if (r.techScore === 0 && b.techScore === 0) {
-                if (state.lastWarned === 'blue') return "赤コーナーの選手の警告判定勝ちです";
-                if (state.lastWarned === 'red') return "青コーナーの選手の警告判定勝ちです";
-            }
+setInterval(()=>{
+    if (cb.mainRun) {
+        if (cb_isLate()) {
+            if (cb.mainTime<120) { cb.mainTime++; cb_updateMainDisp(); cb_checkLateWarnings(); if(cb.mainTime>=120){cb_stopMain();_beep(true);} }
+        } else {
+            if (cb.mainTime>0) { cb.mainTime--; cb_updateMainDisp(); if(cb.mainTime===0){cb_stopMain();_beep(true);} }
         }
-        return "";
     }
+    for (let k in cb.subs) {
+        let t=cb.subs[k];
+        if (t.r) {
+            t.v+=t.type==='up'?1:-1;
+            document.getElementById('cb-'+k+'-val').innerText=t.type==='up'?t.v:_fmt(t.v);
+            if ((t.type==='up'&&t.v>=t.max)||(t.type==='down'&&t.v<=0)) { t.r=false; _beepSub(); document.getElementById('cb-btn-'+k).innerText='▶'; }
+        }
+    }
+}, 1000);
 
-    function openScoreSheet() {
-        const rH = document.getElementById('red-history-track');
-        const bH = document.getElementById('blue-history-track');
-        rH.innerHTML = ''; bH.innerHTML = '';
-        state.history.forEach(h => {
-            const rd = document.createElement('div'); rd.className = 'history-item'; rd.innerText = h.red; rH.appendChild(rd);
-            const bd = document.createElement('div'); bd.className = 'history-item'; bd.innerText = h.blue; bH.appendChild(bd);
+/* ================================================================
+   BEACH SCOREBOARD
+   ================================================================ */
+let bc = {
+    red:  { score:0, warn:0, ippon:false },
+    blue: { score:0, warn:0, ippon:false },
+    mainTime:180, mainRun:false, mainMode:'3min',
+    subs: { redMed:{v:120,r:false}, blueMed:{v:120,r:false} },
+    history:[]
+};
+
+function bc_isLate() { return bc.mainMode.includes('Late'); }
+function bc_toggleDropdown() { document.getElementById('bc-mode-dropdown').classList.toggle('open'); }
+
+function bc_setMode(m) {
+    bc.mainMode=m; bc_stopMain();
+    const panel=document.getElementById('bc-main-timer-panel');
+    panel.classList.remove('bc-late-red','bc-late-blue','bc-late-both');
+    if (bc_isLate()) {
+        bc.mainTime=0;
+        if (m==='redLate') panel.classList.add('bc-late-red');
+        if (m==='blueLate') panel.classList.add('bc-late-blue');
+        if (m==='bothLate') panel.classList.add('bc-late-both');
+        if (m.includes('red')||m.includes('both')) { bc.red.warn=0; bc_renderCards('red'); }
+        if (m.includes('blue')||m.includes('both')) { bc.blue.warn=0; bc_renderCards('blue'); }
+    } else { bc.mainTime=parseInt(m)*60; }
+    bc_updateMainDisp();
+    document.getElementById('bc-mode-dropdown').classList.remove('open');
+    bc_updateStatusLabels();
+}
+
+function bc_renderCards(side) {
+    const cards=document.getElementById('bc-'+side+'-cards').children;
+    for (let i=0;i<2;i++) cards[i].classList.toggle('active', i<bc[side].warn);
+}
+
+function bc_updateStatusLabels() {
+    const rL=document.getElementById('bc-red-ippon-txt'), bL=document.getElementById('bc-blue-ippon-txt');
+    let nR='', nB='';
+    if (bc.red.warn>=2) nR='失格'; else if (bc.red.ippon) nR='一本勝ち';
+    if (bc.blue.warn>=2) nB='失格'; else if (bc.blue.ippon) nB='一本勝ち';
+    const pR=rL.innerText, pB=bL.innerText;
+    rL.innerText=nR; bL.innerText=nB;
+    if ((nR!==''&&nR!==pR)||(nB!==''&&nB!==pB)) { if (nR!==''||nB!=='') { _beep(true); bc_stopMain(); } }
+    bc_updateNameColors();
+}
+
+function bc_updateNameColors() {
+    const rn=document.getElementById('bc-red-name'), bn=document.getElementById('bc-blue-name');
+    const rl=document.getElementById('bc-red-ippon-txt').innerText, bl=document.getElementById('bc-blue-ippon-txt').innerText;
+    rn.classList.toggle('winner-highlight',rl.includes('勝ち')||bl.includes('失格'));
+    bn.classList.toggle('winner-highlight',bl.includes('勝ち')||rl.includes('失格'));
+}
+
+function bc_recordHistory(side, typeLabel) {
+    const map={'1':'1','2':'2','4':'4','ippon':'一本','+':'調1','-':'－調1','Reset':'R'};
+    let entry={red:'',blue:''}; const opp=side==='red'?'blue':'red';
+    if (typeLabel==='warn1') { entry[side]='〇'; entry[opp]='0⃣'; }
+    else if (typeLabel==='warn2'||typeLabel==='DQ') { entry[side]='☒'; }
+    else { entry[side]=map[typeLabel]||typeLabel; }
+    if (entry.red!==''||entry.blue!=='') bc.history.push(entry);
+}
+
+function bc_disqualify(side) {
+    if (bc[side].warn>=2) return;
+    bc[side].warn=2; bc_recordHistory(side,'DQ'); bc_renderCards(side); bc_updateStatusLabels();
+}
+
+function bc_changeScore(side, d, typeLabel) {
+    bc[side].score=Math.max(0,bc[side].score+d);
+    const scoreEl=document.getElementById('bc-'+side+'-score');
+    scoreEl.innerText=bc[side].score;
+    scoreEl.style.fontSize=bc[side].score>=10?'240px':'380px';
+    if (typeLabel) bc_recordHistory(side,typeLabel);
+    bc_updateStatusLabels();
+}
+
+function bc_confirmResetScore(side) {
+    if (confirm(`${side==='red'?'赤':'青'}コーナーの得点をリセットしますか？`)) {
+        bc[side].score=0; bc[side].ippon=false;
+        const scoreEl=document.getElementById('bc-'+side+'-score');
+        scoreEl.innerText=0; scoreEl.style.fontSize='380px';
+        bc_recordHistory(side,'Reset'); bc_updateStatusLabels();
+    }
+}
+
+function bc_addWarningBoth() {
+    if (bc.red.warn<2&&bc.blue.warn<2) {
+        bc.red.warn++; bc.blue.warn++;
+        bc.history.push({red:bc.red.warn===1?'〇':'☒', blue:bc.blue.warn===1?'〇':'☒'});
+        bc_renderCards('red'); bc_renderCards('blue'); bc_updateStatusLabels();
+    }
+}
+
+function bc_addFoul(side) {
+    if (bc[side].warn>=2) return;
+    bc[side].warn++;
+    bc.history.push({red:side==='red'?(bc[side].warn===1?'反':'☒'):'', blue:side==='blue'?(bc[side].warn===1?'反':'☒'):''});
+    bc_renderCards(side); bc_updateStatusLabels();
+}
+
+function bc_changeWarn(side, d) {
+    if (d<0) {
+        if (bc[side].warn>0) {
+            for (let i=bc.history.length-1;i>=0;i--) {
+                if (bc.history[i][side]==='〇'||bc.history[i][side]==='☒'||bc.history[i][side]==='反') { bc.history.splice(i,1); break; }
+            }
+            bc[side].warn--;
+        }
+    } else {
+        if (bc[side].warn<2) {
+            bc[side].warn++;
+            if (bc[side].warn===1) bc_recordHistory(side,'warn1');
+            else bc_recordHistory(side,'warn2');
+        }
+    }
+    bc_renderCards(side); bc_updateStatusLabels();
+}
+
+function bc_checkLateWarnings() {
+    const time=bc.mainTime, targets=[];
+    if (bc.mainMode==='redLate'||bc.mainMode==='bothLate') targets.push('red');
+    if (bc.mainMode==='blueLate'||bc.mainMode==='bothLate') targets.push('blue');
+    targets.forEach(side=>{
+        if (time===30&&bc[side].warn<1) bc_changeWarn(side,1);
+        if (time===60&&bc[side].warn<2) bc_changeWarn(side,1);
+    });
+}
+
+function bc_openScoreSheet() {
+    const rH=document.getElementById('bc-red-history-track'), bH=document.getElementById('bc-blue-history-track');
+    rH.innerHTML=''; bH.innerHTML='';
+    bc.history.forEach(h=>{
+        const rd=document.createElement('div'); rd.className='history-item'; rd.innerText=h.red; rH.appendChild(rd);
+        const bd=document.createElement('div'); bd.className='history-item'; bd.innerText=h.blue; bH.appendChild(bd);
+    });
+    document.getElementById('bc-sheet-red-total').innerText=bc.red.warn>=2?'失格':(bc.red.ippon?'一本':bc.red.score);
+    document.getElementById('bc-sheet-blue-total').innerText=bc.blue.warn>=2?'失格':(bc.blue.ippon?'一本':bc.blue.score);
+    document.getElementById('bc-sheet-result-text').innerText= (bc.red.score>bc.blue.score)?'赤コーナーの勝ちです':((bc.blue.score>bc.red.score)?'青コーナーの勝ちです':'');
+    document.getElementById('bc-score-sheet-overlay').style.display='flex';
+    const sa=document.getElementById('bc-sheet-scroll-area');
+    setTimeout(()=>{sa.scrollLeft=sa.scrollWidth;},50);
+}
+function bc_closeScoreSheet() { document.getElementById('bc-score-sheet-overlay').style.display='none'; }
+function bc_setIppon(side) { bc[side].ippon=true; bc_recordHistory(side,'ippon'); bc_updateStatusLabels(); }
+function bc_setDrawWin(side) { document.getElementById('bc-'+side+'-ippon-txt').innerText='判定勝ち'; _beep(true); bc_stopMain(); bc_updateNameColors(); }
+function bc_toggleMain() { bc.mainRun=!bc.mainRun; document.getElementById('bc-main-s-btn').innerText=bc.mainRun?'⏸':'▶'; }
+function bc_stopMain() { bc.mainRun=false; document.getElementById('bc-main-s-btn').innerText='▶'; }
+function bc_addMainTime(s) { bc.mainTime+=s; bc_updateMainDisp(); }
+function bc_resetMain() { bc_setMode(bc.mainMode); }
+function bc_updateMainDisp() { document.getElementById('bc-main-clock').innerText=_fmt(bc.mainTime); }
+
+function bc_toggleSub(id) { bc.subs[id].r=!bc.subs[id].r; document.getElementById('bc-btn-'+id).innerText=bc.subs[id].r?'⏸':'▶'; }
+function bc_resetSub(id) { bc.subs[id].r=false; bc.subs[id].v=120; document.getElementById('bc-'+id+'-val').innerText='2:00'; document.getElementById('bc-btn-'+id).innerText='▶'; }
+
+function bc_allReset() { if(confirm('全てリセットしますか？')) location.reload(); }
+
+function bc_matchReset() {
+    if (confirm('全てリセットしますか？')) {
+        bc.red={score:0,warn:0,ippon:false}; bc.blue={score:0,warn:0,ippon:false}; bc.history=[];
+        ['red','blue'].forEach(side=>{
+            const se=document.getElementById('bc-'+side+'-score'); se.innerText=0; se.style.fontSize='380px';
+            document.getElementById('bc-'+side+'-ippon-txt').innerText='';
+            document.getElementById('bc-'+side+'-name').value=side==='red'?'赤コーナー':'青コーナー';
+            bc_renderCards(side); bc_resetSub(side+'Med');
         });
-        document.getElementById('sheet-red-total').innerText = state.red.warn >= 4 ? "失格" : (state.red.ippon ? "一本" : state.red.score);
-        document.getElementById('sheet-blue-total').innerText = state.blue.warn >= 4 ? "失格" : (state.blue.ippon ? "一本" : state.blue.score);
-        document.getElementById('sheet-result-text').innerText = getMatchResultText();
-        document.getElementById('score-sheet-overlay').style.display = 'flex';
-        const scrollArea = document.getElementById('sheet-scroll-area');
-        setTimeout(() => { scrollArea.scrollLeft = scrollArea.scrollWidth; }, 50);
+        bc_updateNameColors(); bc_setMode(bc.mainMode);
     }
+}
 
-    function closeScoreSheet() { document.getElementById('score-sheet-overlay').style.display = 'none'; }
-    function setIppon(side) { state[side].ippon = true; recordHistory(side, 'ippon'); updateStatusLabels(); }
-    
-    function confirmResetScore(side) {
-        if(confirm(`${side === 'red' ? '赤' : '青'}コーナーの得点をリセットしますか？`)) {
-            state[side].score = 0; state[side].ippon = false; state[side].techScore = 0; state[side].count4 = 0; state[side].count2 = 0; state[side].count4D = 0;
-            const scoreEl = document.getElementById(`${side}-score`);
-            scoreEl.innerText = 0;
-            scoreEl.style.fontSize = '350px';
-            document.getElementById(`${side}-ippon-txt`).innerText = "";
-            recordHistory(side, 'Reset'); updateStatusLabels();
+setInterval(()=>{
+    if (bc.mainRun) {
+        if (bc_isLate()) {
+            if (bc.mainTime<60) { bc.mainTime++; bc_updateMainDisp(); bc_checkLateWarnings(); if(bc.mainTime>=60){bc_stopMain();_beep(true);} }
+        } else {
+            if (bc.mainTime>0) { bc.mainTime--; bc_updateMainDisp(); if(bc.mainTime===0){bc_stopMain();_beep(true);} }
         }
     }
-
-    function setDrawWin(side) {
-        document.getElementById(side + '-ippon-txt').innerText = "判定勝ち";
-        stopMain(); beep(true); updateNameColors();
-    }
-
-    function updateStatusLabels() {
-        const rL = document.getElementById('red-ippon-txt'), bL = document.getElementById('blue-ippon-txt');
-        let nR = "", nB = "";
-        if (state.red.warn >= 4) nR = "失格"; else if (state.red.ippon) nR = "一本"; else if (state.red.score - state.blue.score >= 8 || state.red.count4D >= 2) nR = "テクニカル一本勝ち";
-        if (state.blue.warn >= 4) nB = "失格"; else if (state.blue.ippon) nB = "一本"; else if (state.blue.score - state.red.score >= 8 || state.blue.count4D >= 2) nB = "テクニカル一本勝ち";
-        const pR = rL.innerText, pB = bL.innerText;
-        rL.innerText = nR; bL.innerText = nB;
-        if ((nR !== "" && nR !== pR && nR !== "一本") || (nB !== "" && nB !== pB && nB !== "一本")) {
-            if (nR.includes("勝ち") || nR === "失格" || nB.includes("勝ち") || nB === "失格") { beep(true); stopMain(); }
-        }
-        updateNameColors();
-    }
-
-    function updateNameColors() {
-        const rn = document.getElementById('red-name'), bn = document.getElementById('blue-name');
-        const rl = document.getElementById('red-ippon-txt').innerText, bl = document.getElementById('blue-ippon-txt').innerText;
-        rn.classList.toggle('winner-highlight', rl.includes("勝ち") || rl === "一本" || bl.includes("失格"));
-        bn.classList.toggle('winner-highlight', bl.includes("勝ち") || bl === "一本" || rl.includes("失格"));
-    }
-
-    function toggleMain() { state.mainRun = !state.mainRun; document.getElementById('main-s-btn').innerText = state.mainRun ? "⏸" : "▶"; }
-    function stopMain() { state.mainRun = false; document.getElementById('main-s-btn').innerText = "▶"; }
-    function resetMain() { setMode(state.mainMode); }
-    function updateMainDisp() { document.getElementById('main-clock').innerText = formatMinSec(state.mainTime); }
-    function addMainTime(s) { state.mainTime += s; updateMainDisp(); }
-
-    function toggleSub(id) { state.subs[id].r = !state.subs[id].r; document.getElementById('btn-'+id).innerText = state.subs[id].r ? "⏸" : "▶"; }
-    function resetSub(id) { 
-        const t = state.subs[id]; t.r = false; t.v = t.type==='up'?0:120;
-        document.getElementById(id+'-val').innerText = t.type==='up'?t.v:formatMinSec(t.v);
-        document.getElementById(id+'-val').classList.remove('limit-reached');
-        document.getElementById('btn-'+id).innerText = "▶";
-    }
-
-    function allReset() { if(confirm("ページ全体をリセットしますか？")) location.reload(); }
-    function matchReset() {
-        if(confirm("全てリセットしますか？")) {
-            state.red = { score: 0, warn: 0, ippon: false, techScore: 0, count4: 0, count2: 0, foulCount: 0, count4D: 0 };
-            state.blue = { score: 0, warn: 0, ippon: false, techScore: 0, count4: 0, count2: 0, foulCount: 0, count4D: 0 };
-            state.history = []; state.lastTechScorer = null; state.lastWarned = null;
-            
-            const rs = document.getElementById('red-score');
-            rs.innerText = '0';
-            rs.style.fontSize = '350px';
-            
-            const bs = document.getElementById('blue-score');
-            bs.innerText = '0';
-            bs.style.fontSize = '350px';
-            
-            document.getElementById('red-ippon-txt').innerText = ''; document.getElementById('blue-ippon-txt').innerText = '';
-            document.getElementById('red-name').value = '赤コーナー'; document.getElementById('blue-name').value = '青コーナー';
-            updateNameColors(); renderCards('red'); renderCards('blue');
-            Object.keys(state.subs).forEach(k => resetSub(k)); setMode(state.mainMode);
+    for (let k in bc.subs) {
+        let t=bc.subs[k];
+        if (t.r) {
+            t.v+=t.type==='up'?1:-1;
+            document.getElementById('bc-'+k+'-val').innerText=t.type==='up'?t.v:_fmt(t.v);
+            if ((t.type==='up'&&t.v>=t.max)||(t.type==='down'&&t.v<=0)) { t.r=false; _beepSub(); document.getElementById('bc-btn-'+k).innerText='▶'; }
         }
     }
-
-    setInterval(() => {
-        if (state.mainRun) {
-            if (isLateMode()) {
-                if (state.mainTime < 120) { state.mainTime++; updateMainDisp(); checkLateWarnings(); if (state.mainTime >= 120) { stopMain(); beep(true); } }
-            } else { if (state.mainTime > 0) { state.mainTime--; updateMainDisp(); if(state.mainTime===0){ stopMain(); beep(true); } } }
-        }
-        for (let k in state.subs) {
-            const t = state.subs[k];
-            if (t.r) {
-                if(t.type==='up'){ t.v++; if(t.v>=t.max){ t.r=false; beep(false); document.getElementById(k+'-val').classList.add('limit-reached'); } document.getElementById(k+'-val').innerText=t.v; }
-                else { t.v--; if(t.v<=0){ t.r=false; beep(true); document.getElementById(k+'-val').classList.add('limit-reached'); } document.getElementById(k+'-val').innerText=formatMinSec(t.v); }
-                if(!t.r) document.getElementById('btn-'+k).innerText="▶";
-            }
-        }
-    }, 1000);
+}, 1000);
 </script>
 </body>
 </html>
